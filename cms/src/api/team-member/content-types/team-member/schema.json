@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "team_members",
+  "info": {
+    "singularName": "team-member",
+    "pluralName": "team-members",
+    "displayName": "Team Member",
+    "description": "Advocates and staff profiles, e.g. Herbert Nyamurongi - Sr. Advocate, CEO"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "title": {
+      "type": "string",
+      "required": true,
+      "description": "e.g. 'Sr. Advocate, CEO', 'Advocate of the High Court of Kenya'"
+    },
+    "bio": {
+      "type": "richtext"
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "yearsExperience": {
+      "type": "integer"
+    },
+    "specializations": {
+      "type": "json",
+      "description": "Array of strings"
+    },
+    "displayOrder": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "kind": "collectionType",
+  "collectionName": "comments",
+  "info": {
+    "singularName": "comment",
+    "pluralName": "comments",
+    "displayName": "Comment",
+    "description": "Visitor comments on blog articles. Supports one level of nested replies via the 'parent' relation. All comments default to 'pending' and require admin approval before appearing publicly."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "content": {
+      "type": "text",
+      "required": true,
+      "maxLength": 2000
+    },
+    "authorName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "authorEmail": {
+      "type": "email",
+      "required": true,
+      "private": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "approved", "rejected"],
+      "default": "pending",
+      "required": true
+    },
+    "article": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::article.article",
+      "inversedBy": "comments"
+    },
+    "parent": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::comment.comment",
+      "inversedBy": "replies"
+    },
+    "replies": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::comment.comment",
+      "mappedBy": "parent"
+    }
+  }
+}

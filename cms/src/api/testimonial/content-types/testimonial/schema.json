@@ -1,0 +1,51 @@
+{
+  "kind": "collectionType",
+  "collectionName": "testimonials",
+  "info": {
+    "singularName": "testimonial",
+    "pluralName": "testimonials",
+    "displayName": "Testimonial",
+    "description": "Client testimonials submitted via the public 'Submit a Testimonial' form. Held for admin approval before publishing."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "fullName": {
+      "type": "string",
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "private": true
+    },
+    "companyName": {
+      "type": "string"
+    },
+    "companyWebsite": {
+      "type": "string"
+    },
+    "quote": {
+      "type": "text",
+      "required": true,
+      "maxLength": 1000
+    },
+    "photo": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "rating": {
+      "type": "integer",
+      "min": 1,
+      "max": 5
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "approved", "rejected"],
+      "default": "pending",
+      "required": true
+    }
+  }
+}

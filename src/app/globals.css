@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+/*
+ * "Chambers" editorial palette — dark ink ground with warm cream "paper"
+ * sections for contrast, sage-green accent. Tailwind v4 reads these
+ * straight from CSS custom properties instead of tailwind.config.js.
+ */
+@theme {
+  --font-display: var(--font-cormorant), "Palatino Linotype", Palatino, serif;
+  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+
+  --color-ink: #0c100e;
+  --color-elevated: #151b17;
+  --color-panel: #1c2420;
+  --color-fg: #ece8e0;
+  --color-muted: #9a9588;
+  --color-paper: #f3efe6;
+  --color-paper-2: #e7e1d3;
+  --color-charcoal: #161914;
+  --color-sage: #8fa89a;
+  --color-sage-deep: #3d5248;
+  --color-hairline: #2a322e;
+  --color-rule: #d4ccba;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+img {
+  outline: 1px solid color-mix(in oklab, var(--color-fg) 10%, transparent);
+  outline-offset: -1px;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-sage) 40%, transparent);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Prevents flash-of-content before the preloader/GSAP intro takes over */
+.js-loading {
+  overflow: hidden;
+  height: 100vh;
+}

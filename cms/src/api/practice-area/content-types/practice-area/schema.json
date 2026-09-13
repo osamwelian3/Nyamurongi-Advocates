@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "practice_areas",
+  "info": {
+    "singularName": "practice-area",
+    "pluralName": "practice-areas",
+    "displayName": "Practice Area",
+    "description": "The firm's 7 legal service areas: Corporate & Business, Civil & Criminal Litigation, Property & Real Estate, Employment & Labor, Banking & Finance, Family & Divorce"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "shortDescription": {
+      "type": "text",
+      "maxLength": 200,
+      "required": true
+    },
+    "intro": {
+      "type": "richtext"
+    },
+    "whatItCovers": {
+      "type": "json",
+      "description": "Array of strings, e.g. ['Loan agreements', 'Debt restructuring', ...]"
+    },
+    "exampleSituations": {
+      "type": "json",
+      "description": "Array of strings describing typical client scenarios"
+    },
+    "iconName": {
+      "type": "string",
+      "description": "lucide-react icon name, e.g. 'briefcase', 'scale', 'home', 'hard-hat', 'landmark', 'users'"
+    },
+    "displayOrder": {
+      "type": "integer",
+      "default": 0
+    }
+  }
+}
