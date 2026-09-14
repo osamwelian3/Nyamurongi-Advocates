@@ -1,26 +1,25 @@
 @import "tailwindcss";
 
 /*
- * "Chambers" editorial palette — dark ink ground with warm cream "paper"
- * sections for contrast, sage-green accent. Tailwind v4 reads these
- * straight from CSS custom properties instead of tailwind.config.js.
+ * Palette pulled from the real site's PDF exports: ink-navy text/hero,
+ * parchment/white page background, brass/gold service-icon accent, and
+ * the maroon of the firm's own logo mark and highlighted copy — not the
+ * reference app's invented dark/sage "chambers" palette.
+ *
+ * Structure and typography (Cormorant Garamond display + Outfit sans,
+ * dark/light alternating sections, word-mask hero) are kept from the
+ * reference layout per your direction.
  */
 @theme {
   --font-display: var(--font-cormorant), "Palatino Linotype", Palatino, serif;
   --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
 
-  --color-ink: #0c100e;
-  --color-elevated: #151b17;
-  --color-panel: #1c2420;
-  --color-fg: #ece8e0;
-  --color-muted: #9a9588;
-  --color-paper: #f3efe6;
-  --color-paper-2: #e7e1d3;
-  --color-charcoal: #161914;
-  --color-sage: #8fa89a;
-  --color-sage-deep: #3d5248;
-  --color-hairline: #2a322e;
-  --color-rule: #d4ccba;
+  --color-ink: #0b1220;
+  --color-elevated: #141d2c;
+  --color-parchment: #f7f5f0;
+  --color-parchment-2: #ece4d6;
+  --color-brass: #a98139;
+  --color-maroon: #7a2436;
 }
 
 html {
@@ -31,7 +30,7 @@ html {
 
 body {
   background: var(--color-ink);
-  color: var(--color-fg);
+  color: var(--color-parchment);
   font-family: var(--font-sans);
   line-height: 1.6;
 }
@@ -52,12 +51,12 @@ p {
 }
 
 img {
-  outline: 1px solid color-mix(in oklab, var(--color-fg) 10%, transparent);
+  outline: 1px solid color-mix(in oklab, var(--color-parchment) 10%, transparent);
   outline-offset: -1px;
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--color-sage) 40%, transparent);
+  background: color-mix(in oklab, var(--color-brass) 40%, transparent);
   color: var(--color-ink);
 }
 

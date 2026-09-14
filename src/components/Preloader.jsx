@@ -91,7 +91,7 @@ export default function Preloader() {
         <path
           ref={pathRef}
           d="M36 4 L68 36 L36 68 L4 36 Z M22 50 L22 22 L50 50 L50 22"
-          stroke="#8fa89a"
+          stroke="#a98139"
           strokeWidth="2.5"
           strokeLinejoin="round"
           strokeLinecap="round"
@@ -100,13 +100,13 @@ export default function Preloader() {
 
       <div
         ref={wordmarkRef}
-        className="font-display text-2xl md:text-3xl tracking-wide text-fg"
+        className="font-display text-2xl md:text-3xl tracking-wide text-parchment"
       >
         Nyamurongi &amp; Co. Advocates
       </div>
       <div
         ref={taglineRef}
-        className="mt-2 font-sans text-xs uppercase tracking-[0.28em] text-sage"
+        className="mt-2 font-sans text-xs uppercase tracking-[0.28em] text-brass"
       >
         Advocates of the High Court of Kenya
       </div>

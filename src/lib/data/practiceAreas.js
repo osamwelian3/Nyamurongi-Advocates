@@ -1,196 +1,126 @@
 export const practiceAreas = [
   {
-    slug: "corporate-business-law",
-    title: "Corporate & Business Law",
-    tagline: "Building and Protecting Your Business the Right Way",
-    icon: "Briefcase",
-    summary:
-      "Starting and running a business involves more than just great ideas and hard work — it requires strong legal foundations.",
-    intro:
-      "Corporate and Business Law focuses on helping entrepreneurs, companies, and organizations operate legally, minimize risks, and grow sustainably. At Nyamurongi Advocates, we assist businesses at every stage, from formation to expansion and even restructuring. Whether you are launching a startup, entering into partnerships, or negotiating contracts, our team ensures your interests are protected.",
-    coverage: [
-      {
-        group: "What Corporate & Business Law Covers",
-        items: [
-          "Business registration and company formation",
-          "Partnership agreements and shareholder agreements",
-          "Drafting and reviewing contracts",
-          "Business compliance and regulatory advice",
-          "Mergers and acquisitions",
-          "Corporate governance and advisory",
-          "Business dispute resolution",
-        ],
-      },
-    ],
-    exampleSituations: [
-      "Two partners want to start a company but need a legally binding partnership agreement to avoid future disputes",
-      "A business owner needs help reviewing a supplier contract before signing",
-      "A company wants to expand operations and needs legal guidance on compliance and licensing",
-    ],
-    closing:
-      "Corporate law helps prevent legal issues before they arise and ensures your business operates smoothly and securely.",
-  },
-  {
-    slug: "civil-criminal-litigation",
-    title: "Civil & Criminal Litigation",
-    tagline: "Strong Representation When It Matters Most",
+    slug: "litigation",
     icon: "Gavel",
+    kicker: "Division I",
+    title: "Litigation & Dispute Resolution",
     summary:
-      "Legal disputes can arise unexpectedly, and when they do, having experienced legal representation is critical.",
-    intro:
-      "Civil and Criminal Litigation involves representing clients in court and resolving disputes through legal proceedings or negotiations. At Nyamurongi Advocates, we provide strategic representation designed to protect your rights and achieve favorable outcomes.",
-    coverage: [
-      {
-        group: "Civil Litigation",
-        items: [
-          "Contract disputes",
-          "Debt recovery",
-          "Property disputes",
-          "Business disputes",
-          "Personal injury claims",
-        ],
-      },
-      {
-        group: "Criminal Litigation",
-        items: [
-          "Criminal defense representation",
-          "Bail applications",
-          "Appeals",
-          "Legal advice during investigations",
-          "Representation in criminal trials",
-        ],
-      },
+      "Representation in court, strategic advice through the life of a matter, and protection of the client's rights when the brief turns adversarial.",
+    body: [
+      "When a matter ends in court, counsel must present the case in its most favourable light and keep the client's rights intact through every step of the proceeding. That is the first work of this chambers.",
+      "The litigation division appears in civil, commercial, land and employment disputes before the High Court, the Environment and Land Court, the Employment and Labour Relations Court, and the Court of Appeal. We take instructions to prosecute and to defend; we also hold brief, settle, and advise on whether a matter should be fought at all.",
+      "Our published view is simple: an advocate's value is legal expertise, protection of rights, strategic advice, and representation. We do not dress that work in theatre. We keep a file, we know the record, and we appear.",
     ],
-    exampleSituations: [
-      "A client is owed money and needs help recovering unpaid debts",
-      "A property ownership dispute arises between two parties",
-      "An individual is charged with a criminal offense and requires legal defense",
+    work: [
+      "Civil and commercial suits",
+      "Appellate advocacy",
+      "Injunctions and interim relief",
+      "Defence of institutional respondents",
+      "Negotiated settlement and ADR",
     ],
-    closing:
-      "Our approach focuses on careful case preparation, strategic negotiation, and effective courtroom advocacy.",
   },
   {
-    slug: "property-real-estate-law",
-    title: "Property & Real Estate Law",
-    tagline: "Securing Your Property Investments",
+    slug: "probate",
+    icon: "ScrollText",
+    kicker: "Division II",
+    title: "Probate & Succession",
+    summary:
+      "Letters of administration, testamentary dispositions, and the drafting and custody of wills — the quiet work of an estate done properly.",
+    body: [
+      "Probate, as we describe it, is a precise menu: taking out letters of administration, preparation of testamentary dispositions, and the drafting and custody of wills. Families come to us when a death has left land, shares, and unfinished paper.",
+      "Kenyan succession is procedural and unforgiving of gaps. We prepare petitions for grant, citations, summons for confirmation, and the instruments that follow a confirmed grant. Where a will is contested or a grant is to be revoked, the file moves into the litigation division without the client having to instruct a second chambers.",
+      "Custody of a will is a confidence. We keep it as such.",
+    ],
+    work: [
+      "Drafting and custody of wills",
+      "Petitions for grant of probate and letters of administration",
+      "Confirmation of grant",
+      "Rectification and revocation",
+      "Dependants' and family provision",
+    ],
+  },
+  {
+    slug: "conveyancing",
     icon: "Home",
+    kicker: "Division III",
+    title: "Conveyancing & Real Estate",
     summary:
-      "Property transactions often involve significant financial commitments, making legal guidance essential.",
-    intro:
-      "Property and Real Estate Law focuses on ensuring safe and legally compliant property transactions. At Nyamurongi Advocates, we help clients navigate land purchases, property transfers, and disputes with confidence.",
-    coverage: [
-      {
-        group: "What Property & Real Estate Law Covers",
-        items: [
-          "Land purchase and sale agreements",
-          "Title deed verification",
-          "Property transfers",
-          "Lease agreements",
-          "Property disputes",
-          "Land ownership advisory",
-          "Real estate transactions",
-        ],
-      },
+      "Mortgages, sales and transfers of land, charges, debentures, leases, changes of user, discharges, caveats, cautions and licences.",
+    body: [
+      "Conveyancing in these chambers is a broad menu: mortgages, sales and transfers of land, registration of charges and debentures, leases, changes of user, discharges, caveats, cautions and licences. The list is long because Kenyan land is long on procedure.",
+      "We act for purchasers, vendors, lenders and developers. Due diligence on title, the agreement for sale, completion, and registration are run as a single file — not as a chain of disconnected clerks. Where a caution or caveat must be registered or withdrawn, we do that work in the same breath as the transfer.",
+      "Nyanza land — ancestral, adjudicated, leasehold, and company — has its own grain. We have practised in it for years.",
     ],
-    exampleSituations: [
-      "A client wants to buy land and needs help verifying ownership documents",
-      "A landlord requires a lease agreement for tenants",
-      "A dispute arises over property boundaries",
+    work: [
+      "Sale and transfer of land",
+      "Charges, mortgages and discharges",
+      "Leases and licences",
+      "Caveats, cautions and restrictions",
+      "Change of user and development consents",
     ],
-    closing:
-      "Proper legal support helps protect your investment and avoid costly mistakes.",
   },
   {
-    slug: "employment-labor-law",
-    title: "Employment & Labor Law",
-    tagline: "Protecting Workplace Rights",
+    slug: "commercial",
+    icon: "Briefcase",
+    kicker: "Division IV",
+    title: "Commercial & Corporate",
+    summary:
+      "Company work, commercial contracts, and counsel to trading houses, factories, and institutions that need a Kisii record and a Nairobi reach.",
+    body: [
+      "The commercial and corporate division advises on the instruments that keep a business standing: incorporation and reconstitution, shareholders' arrangements, supply and distribution contracts, securities, and the disputes that follow when those papers fail.",
+      "Chambers have acted for bottlers, supermarkets, construction groups and banks. The work is not boutique fashion; it is the day-to-day law of companies that employ people and hold land in the region.",
+      "When a commercial dispute hardens, the file is tried by the same chambers that drafted the contract. Continuity of instruction is part of the value.",
+    ],
+    work: [
+      "Company formation and reconstitution",
+      "Commercial contracts and securities",
+      "Shareholder and partnership disputes",
+      "Debt recovery",
+      "Regulatory and licensing advice",
+    ],
+  },
+  {
+    slug: "employment",
     icon: "HardHat",
+    kicker: "Division V",
+    title: "Employment & Labour",
     summary:
-      "Employment and Labor Law governs the relationship between employers and employees.",
-    intro:
-      "Whether you're an employer managing a workforce or an employee protecting your rights, legal guidance is essential. Nyamurongi Advocates offers support to ensure fair, lawful, and compliant workplace practices.",
-    coverage: [
-      {
-        group: "What Employment & Labor Law Covers",
-        items: [
-          "Employment contracts",
-          "Wrongful termination disputes",
-          "Workplace disputes",
-          "Employee rights advisory",
-          "Employer compliance",
-          "Redundancy and termination procedures",
-          "Workplace policy drafting",
-        ],
-      },
+      "Counsel to employers and, where instructed, to unions — with a standing record for Kisii University, bottlers, and trading companies before the ELRC.",
+    body: [
+      "Employment and labour is a substantial part of the chambers' public record. We have appeared for Kisii University, Kisii Bottlers, Almasi Bottlers, Shivling Supermarket and other employers before the Employment and Labour Relations Court at Kisumu, Nakuru and Nairobi.",
+      "The work covers unfair termination, collective bargaining, union recognition, garnishee and execution of awards, and the daily hygiene of contracts, policies and disciplinary process. Institutions instruct us because we know both the statute and the forum.",
+      "A workplace dispute is rarely improved by delay. We take early instructions and keep the record tight.",
     ],
-    exampleSituations: [
-      "An employee is dismissed unfairly and seeks legal advice",
-      "A company needs employment contracts drafted",
-      "A workplace dispute requires mediation",
+    work: [
+      "Unfair termination and constructive dismissal",
+      "Union claims and collective bargaining",
+      "Employment contracts and handbooks",
+      "Disciplinary process and redundancy",
+      "Enforcement and stay of awards",
     ],
-    closing:
-      "We aim to resolve employment issues efficiently while protecting your rights.",
   },
   {
-    slug: "banking-finance-law",
-    title: "Banking & Finance Law",
-    tagline: "Navigating Financial Transactions Safely",
-    icon: "Landmark",
+    slug: "land",
+    icon: "Trees",
+    kicker: "Division VI",
+    title: "Land & Environment",
     summary:
-      "Banking and Finance Law involves legal matters related to financial transactions, loans, and banking operations.",
-    intro:
-      "Whether you're an individual or business, legal guidance ensures financial agreements are fair and secure. Nyamurongi Advocates assists clients in understanding complex financial agreements and minimizing risk.",
-    coverage: [
-      {
-        group: "What Banking & Finance Law Covers",
-        items: [
-          "Loan agreements",
-          "Debt restructuring",
-          "Financial disputes",
-          "Banking advisory",
-          "Securities and guarantees",
-          "Financial compliance",
-        ],
-      },
+      "Title, occupation, boundary and environment — tried in the Environment and Land Court at Kisii, Kilgoris, Kericho and beyond.",
+    body: [
+      "Land in Kisii, Nyamira, Transmara and Kericho is not an abstraction. It is tea, ancestral occupation, company leasehold, and the long memory of families. The Environment and Land Court is the ordinary forum of this chambers.",
+      "We take instructions on recovery of possession, trespass, trust and occupation, adverse claims, and the environmental overlay that now sits on development. Construction clients and private landowners instruct us in the same division.",
+      "Where a land file is also a succession file, the two divisions work as one. That is the advantage of a small chambers that still keeps a full menu.",
     ],
-    exampleSituations: [
-      "A business needs legal advice before signing a loan agreement",
-      "A borrower faces difficulties repaying a loan and seeks restructuring advice",
-      "A financial dispute arises between a bank and a client",
+    work: [
+      "Recovery of land and trespass",
+      "Occupation, trust and family land",
+      "ELC petitions and judicial review",
+      "Boundaries and mutation disputes",
+      "Development and environmental compliance",
     ],
-    closing: "Our goal is to help clients make informed financial decisions.",
-  },
-  {
-    slug: "family-divorce-law",
-    title: "Family & Divorce Law",
-    tagline: "Compassionate Legal Support for Personal Matters",
-    icon: "Users",
-    summary: "Family matters often require sensitive and professional handling.",
-    intro:
-      "Family and Divorce Law focuses on resolving disputes while protecting the interests of all parties involved. Nyamurongi Advocates provides compassionate legal support during difficult family situations.",
-    coverage: [
-      {
-        group: "What Family & Divorce Law Covers",
-        items: [
-          "Divorce proceedings",
-          "Child custody and support",
-          "Spousal maintenance",
-          "Property division",
-          "Family disputes",
-          "Adoption matters",
-        ],
-      },
-    ],
-    exampleSituations: [
-      "A couple seeking divorce and property division",
-      "A parent seeking child custody",
-      "Family members involved in inheritance disputes",
-    ],
-    closing:
-      "We approach family matters with professionalism, empathy, and confidentiality to achieve fair outcomes.",
   },
 ];
 
-export function getPracticeAreaBySlug(slug) {
-  return practiceAreas.find((p) => p.slug === slug) || null;
+export function getPracticeArea(slug) {
+  return practiceAreas.find((p) => p.slug === slug);
 }

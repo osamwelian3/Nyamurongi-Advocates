@@ -43,18 +43,21 @@ export default function PracticeAreaCard({ area }) {
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{ transformStyle: "preserve-3d", perspective: 800 }}
-      className="group flex h-full flex-col border border-rule bg-paper p-6 text-charcoal transition-colors duration-150 hover:border-charcoal/30 hover:bg-paper-2 sm:p-8"
+      className="group flex h-full flex-col border border-ink/10 bg-parchment p-6 text-ink transition-colors duration-150 hover:border-ink/25 hover:bg-parchment-2 sm:p-8"
     >
       <div className="flex items-start justify-between gap-4">
-        <PracticeIcon name={area.icon} size={26} strokeWidth={1.5} className="text-sage-deep" />
+        <PracticeIcon name={area.icon} size={24} strokeWidth={1.5} className="text-maroon" />
         <ArrowUpRight
           size={17}
           strokeWidth={1.5}
-          className="text-muted transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+          className="text-ink/40 transition-transform duration-150 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
         />
       </div>
-      <h3 className="mt-6 font-display text-2xl sm:text-3xl">{area.title}</h3>
-      <p className="mt-3 flex-1 text-sm leading-relaxed text-charcoal/75">{area.summary}</p>
+      <p className="mt-6 text-[0.68rem] uppercase tracking-[0.22em] text-ink/45">
+        {area.kicker}
+      </p>
+      <h3 className="mt-2 font-display text-2xl sm:text-3xl">{area.title}</h3>
+      <p className="mt-3 flex-1 text-sm leading-relaxed text-ink/70">{area.summary}</p>
     </Link>
   );
 }

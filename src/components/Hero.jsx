@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Phone, ArrowRight } from "lucide-react";
 import { gsap } from "@/lib/gsap";
 import PhotoPlaceholder from "@/components/PhotoPlaceholder";
+import { firm } from "@/lib/data/firm";
 
-const HEADLINE_WORDS = ["Defending", "your", "rights", "with", "confidence."];
+const HEADLINE_WORDS = ["The", "record", "you", "can", "rely", "on."];
 
 export default function Hero() {
   const sectionRef = useRef(null);
@@ -72,7 +73,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-ink text-fg">
+    <section ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-ink text-parchment">
       <div ref={bgRef} className="absolute inset-0 -top-[10%] h-[120%]">
         <PhotoPlaceholder
           label="Firm portrait — advocates in chambers"
@@ -83,7 +84,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-ink/70" />
 
       <div className="relative mx-auto flex min-h-[100svh] max-w-6xl flex-col justify-end px-5 pb-16 pt-28 sm:px-8 sm:pb-20">
-        <p ref={eyebrowRef} className="text-[0.68rem] uppercase tracking-[0.28em] text-sage">
+        <p ref={eyebrowRef} className="text-[0.68rem] uppercase tracking-[0.28em] text-brass">
           Kisii &middot; Advocates of the High Court of Kenya
         </p>
 
@@ -98,30 +99,37 @@ export default function Hero() {
           ))}
         </h1>
 
-        <p ref={subRef} className="mt-6 max-w-lg text-base leading-relaxed text-fg/75 sm:text-lg">
-          25+ years of trusted legal representation. Herbert Nyamurongi, Sr.
-          Advocate &amp; CEO, and the Nyamurongi &amp; Co. team.
+        <p ref={subRef} className="mt-6 max-w-lg text-base leading-relaxed text-parchment/75 sm:text-lg">
+          {firm.blurb}
         </p>
 
         <div ref={ctaRef} className="mt-8 flex flex-wrap items-center gap-5">
           <Link
             href="/contact"
-            className="inline-flex h-12 items-center gap-2 bg-fg px-6 font-sans text-sm font-medium tracking-wide text-ink transition-colors hover:bg-paper"
+            className="inline-flex h-12 items-center gap-2 bg-parchment px-6 font-sans text-sm font-medium tracking-wide text-ink transition-colors hover:bg-parchment-2"
           >
-            Consult Us Today
+            Instruct Us
             <ArrowRight size={16} />
           </Link>
-          <a
-            href="tel:+254711205997"
-            className="flex items-center gap-3 text-sm text-fg/80 hover:text-fg"
+          <Link
+            href="/practice-areas"
+            className="inline-flex h-12 items-center border border-parchment/25 px-6 font-sans text-sm font-medium tracking-wide text-parchment transition-colors hover:border-parchment/50 hover:bg-parchment/5"
           >
-            <span className="flex h-11 w-11 items-center justify-center border border-fg/25">
+            Our Expertise
+          </Link>
+          <a
+            href={firm.phone.href}
+            className="flex items-center gap-3 text-sm text-parchment/80 hover:text-parchment"
+          >
+            <span className="flex h-11 w-11 items-center justify-center border border-parchment/25">
               <Phone size={15} />
             </span>
             <span>
-              Call Now
+              {firm.phone.label}
               <br />
-              <strong className="font-sans font-medium text-fg">+254 711 205 997</strong>
+              <strong className="font-sans font-medium text-parchment">
+                {firm.phone.value}
+              </strong>
             </span>
           </a>
         </div>

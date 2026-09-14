@@ -1,12 +1,12 @@
-import { Briefcase, Gavel, Home, HardHat, Landmark, Users } from "lucide-react";
+import { Briefcase, Gavel, Home, HardHat, ScrollText, Trees } from "lucide-react";
 
 export const iconMap = {
   Briefcase,
   Gavel,
   Home,
   HardHat,
-  Landmark,
-  Users,
+  ScrollText,
+  Trees,
 };
 
 export function PracticeIcon({ name, ...props }) {

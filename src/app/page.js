@@ -4,17 +4,15 @@ import Hero from "@/components/Hero";
 import Reveal from "@/components/Reveal";
 import Counter from "@/components/Counter";
 import PracticeAreaCard from "@/components/PracticeAreaCard";
-import TestimonialCarousel from "@/components/TestimonialCarousel";
+import Matters from "@/components/Matters";
 import PhotoPlaceholder from "@/components/PhotoPlaceholder";
 import CtaBanner from "@/components/CtaBanner";
+import { firm } from "@/lib/data/firm";
 import { practiceAreas } from "@/lib/data/practiceAreas";
-import { teamMembers, firmStats } from "@/lib/data/team";
-import { testimonials } from "@/lib/data/testimonials";
 import { blogPosts } from "@/lib/data/blog";
 
 export default function Home() {
-  const herbert = teamMembers[0];
-  const latestPosts = [...blogPosts]
+  const insights = [...blogPosts]
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 3);
 
@@ -22,10 +20,10 @@ export default function Home() {
     <>
       <Hero />
       <Stats />
-      <PracticeAreas />
-      <FirmStrip herbert={herbert} />
-      <Testimonials />
-      <Insights posts={latestPosts} />
+      <PracticePreview />
+      <FirmStrip />
+      <Matters />
+      <Insights items={insights} />
       <CtaBanner />
     </>
   );
@@ -33,15 +31,15 @@ export default function Home() {
 
 function Stats() {
   return (
-    <section className="border-y border-fg/10 bg-elevated">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-fg/10">
-        {firmStats.map((stat) => (
-          <Reveal key={stat.label} className="px-5 py-10 text-center sm:px-8">
-            <p className="font-display text-4xl text-fg sm:text-5xl">
-              <Counter value={stat.value} suffix={stat.suffix} />
+    <section className="border-y border-parchment/10 bg-elevated">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 divide-x divide-parchment/10 sm:grid-cols-4">
+        {firm.stats.map((s) => (
+          <Reveal key={s.label} className="px-5 py-8 sm:px-8">
+            <p className="font-display text-3xl text-parchment sm:text-4xl">
+              {typeof s.value === "number" ? <Counter value={s.value} /> : s.value}
             </p>
-            <p className="mt-2 text-[0.68rem] uppercase tracking-[0.18em] text-muted">
-              {stat.label}
+            <p className="mt-2 text-[0.68rem] uppercase tracking-[0.18em] text-parchment/50">
+              {s.label}
             </p>
           </Reveal>
         ))}
@@ -50,21 +48,20 @@ function Stats() {
   );
 }
 
-function PracticeAreas() {
+function PracticePreview() {
   return (
-    <section className="bg-paper py-20 text-charcoal sm:py-28">
+    <section className="bg-parchment py-20 text-ink sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <Reveal>
-          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-sage-deep">Expertise</p>
+          <p className="text-[0.68rem] uppercase tracking-[0.28em] text-maroon">Expertise</p>
           <h2 className="mt-3 max-w-2xl font-display text-4xl sm:text-5xl">
             Six divisions, and the files that follow them.
           </h2>
         </Reveal>
-
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {practiceAreas.map((area, i) => (
-            <Reveal key={area.slug} delay={Math.min(i * 0.05, 0.3)}>
-              <PracticeAreaCard area={area} />
+        <div className="mt-12 grid gap-4 sm:grid-cols-2">
+          {practiceAreas.map((p, i) => (
+            <Reveal key={p.slug} delay={i * 0.04}>
+              <PracticeAreaCard area={p} />
             </Reveal>
           ))}
         </div>
@@ -73,36 +70,31 @@ function PracticeAreas() {
   );
 }
 
-function FirmStrip({ herbert }) {
+function FirmStrip() {
   return (
-    <section className="relative overflow-hidden bg-ink text-fg">
+    <section className="relative overflow-hidden bg-ink text-parchment">
       <div className="mx-auto grid max-w-6xl items-center lg:grid-cols-2">
-        <div className="relative min-h-[22rem] lg:min-h-[34rem]">
+        <div className="relative min-h-[22rem] lg:min-h-[36rem]">
           <PhotoPlaceholder
-            label="Herbert Nyamurongi, Sr. Advocate"
+            label="Morning mist over the Kisii highlands"
             aspect="h-full"
             className="absolute inset-0 h-full w-full"
           />
         </div>
         <div className="px-5 py-16 sm:px-12 sm:py-24">
           <Reveal>
-            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-sage">The Firm</p>
+            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-brass">The Firm</p>
             <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-              Trusted legal partner for your success.
+              A Kisii chambers, on the record.
             </h2>
-            <p className="mt-5 max-w-md text-sm leading-relaxed text-fg/75 sm:text-base">
-              We are committed to providing personalized and effective legal
-              solutions that achieve the best possible outcome for our
-              clients. Don&rsquo;t face your legal challenges alone.
-            </p>
-            <p className="mt-4 text-sm text-fg/60">
-              {herbert.name} &middot; {herbert.title}
+            <p className="mt-5 max-w-md text-sm leading-relaxed text-parchment/75 sm:text-base">
+              {firm.about[0]}
             </p>
             <Link
-              href="/team"
-              className="mt-8 inline-flex h-11 items-center gap-2 border border-fg/20 px-5 font-sans text-sm font-medium tracking-wide text-fg transition-colors hover:border-fg/50 hover:bg-fg/5"
+              href="/about"
+              className="mt-8 inline-flex h-11 items-center gap-2 border border-parchment/25 px-5 font-sans text-sm font-medium tracking-wide text-parchment transition-colors hover:border-parchment/50 hover:bg-parchment/5"
             >
-              Meet the Team <ArrowRight size={15} />
+              Read the Chambers <ArrowRight size={15} />
             </Link>
           </Reveal>
         </div>
@@ -111,72 +103,43 @@ function FirmStrip({ herbert }) {
   );
 }
 
-function Testimonials() {
+function Insights({ items }) {
   return (
-    <section className="bg-paper py-20 text-charcoal sm:py-28">
+    <section className="bg-ink py-20 text-parchment sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <Reveal className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-sage-deep">
-              Client Reviews
-            </p>
-            <h2 className="mt-3 font-display text-4xl sm:text-5xl">
-              What our clients say.
-            </h2>
-          </div>
-          <Link
-            href="/testimonials"
-            className="text-[0.72rem] uppercase tracking-[0.2em] text-muted hover:text-charcoal"
-          >
-            Read more
-          </Link>
-        </Reveal>
-
-        <Reveal className="mt-10">
-          <TestimonialCarousel testimonials={testimonials} />
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-function Insights({ posts }) {
-  return (
-    <section className="bg-ink py-20 text-fg sm:py-28">
-      <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <Reveal className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-sage">Insights</p>
+            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-brass">Insights</p>
             <h2 className="mt-3 font-display text-4xl sm:text-5xl">From the chambers desk.</h2>
           </div>
           <Link
             href="/blog"
-            className="text-[0.72rem] uppercase tracking-[0.2em] text-muted hover:text-fg"
+            className="text-[0.72rem] uppercase tracking-[0.2em] text-parchment/50 hover:text-parchment"
           >
             All pieces
           </Link>
         </Reveal>
 
         <div className="mt-12 grid gap-8 md:grid-cols-3">
-          {posts.map((post, i) => (
-            <Reveal key={post.slug} delay={i * 0.05}>
-              <Link href={`/blog/${post.slug}`} className="group block">
+          {items.map((a, i) => (
+            <Reveal key={a.slug} delay={i * 0.05}>
+              <Link href={`/blog/${a.slug}`} className="group block">
                 <div className="aspect-[4/3] overflow-hidden">
                   <PhotoPlaceholder
-                    label={post.category}
+                    label={a.category}
                     aspect="aspect-[4/3]"
                     className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                 </div>
-                <p className="mt-4 text-[0.68rem] uppercase tracking-[0.18em] text-muted">
-                  {new Date(post.date).toLocaleDateString("en-US", {
+                <p className="mt-4 text-[0.68rem] uppercase tracking-[0.18em] text-parchment/50">
+                  {new Date(a.date).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                   })}
                 </p>
-                <h3 className="mt-2 font-display text-2xl leading-snug group-hover:text-sage">
-                  {post.title}
+                <h3 className="mt-2 font-display text-2xl leading-snug group-hover:text-brass">
+                  {a.title}
                 </h3>
               </Link>
             </Reveal>
