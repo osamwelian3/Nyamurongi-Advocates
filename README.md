@@ -51,3 +51,32 @@ Visit http://localhost:3000
 - Herbert Nyamurongi (Sr. Advocate, CEO), 25+ years experience, 91% case success rate
 - Contact: +254 711 205 997 · info@nyamurongiadvocates.local · Lengetia Place, 2nd Floor, Moi Highway, Kisii
 - 3 real blog posts, testimonials, and the "Submit a Testimonial" form fields
+
+## Deploying to GitHub Pages
+
+One-time setup:
+
+```bash
+npm install
+```
+
+Then, whenever you want to publish the current state of the site:
+
+```bash
+npm run deploy
+```
+
+This builds a static export (`out/`) with the GitHub Pages subpath baked
+in, then pushes it to the `gh-pages` branch via the `gh-pages` package.
+
+**One-time repo setting** (not something a script can do for you): in the
+GitHub repo, go to **Settings → Pages**, set **Source** to **"Deploy from
+a branch"**, and **Branch** to **gh-pages**. After the first `npm run
+deploy`, the site is live at:
+
+`https://osamwelian3.github.io/Nyamurongi-Advocates/`
+
+Note: only one Pages source can be active at a time. If a GitHub Actions
+workflow for Pages exists, remove it (or switch the Source setting away
+from "GitHub Actions") before using this branch-based approach — the two
+will otherwise conflict over which deploy "wins."
