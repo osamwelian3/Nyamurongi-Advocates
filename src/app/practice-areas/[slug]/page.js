@@ -1,181 +1,81 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, CheckCircle2, Phone } from "lucide-react";
-import { getPracticeAreaBySlug, practiceAreas } from "@/lib/data/practiceAreas";
-import { PracticeIcon } from "@/components/IconMap";
+import { ArrowRight } from "lucide-react";
+import PageHero from "@/components/PageHero";
 import Reveal from "@/components/Reveal";
+import HoverUnderlineItem from "@/components/HoverUnderlineItem";
+import { practiceAreas, getPracticeArea } from "@/lib/data/practiceAreas";
+import { firm } from "@/lib/data/firm";
 
 export function generateStaticParams() {
   return practiceAreas.map((area) => ({ slug: area.slug }));
 }
 
 export function generateMetadata({ params }) {
-  const area = getPracticeAreaBySlug(params.slug);
-  if (!area) return { title: "Practice Area Not Found" };
+  const area = getPracticeArea(params.slug);
+  if (!area) return {};
   return {
-    title: `${area.title} | Nyamurongi & Co. Advocates`,
+    title: `${area.title} | ${firm.name}`,
     description: area.summary,
   };
 }
 
-export default function PracticeAreaPage({ params }) {
-  const area = getPracticeAreaBySlug(params.slug);
+export default function PracticeAreaDetail({ params }) {
+  const area = getPracticeArea(params.slug);
   if (!area) notFound();
 
-  const others = practiceAreas.filter((a) => a.slug !== area.slug).slice(0, 3);
+  const others = practiceAreas.filter((p) => p.slug !== area.slug).slice(0, 3);
 
   return (
-    <>
-      {/* ============ PAGE HERO ============ */}
-      <section className="bg-ink text-parchment">
-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-          <Reveal direction="up">
-            <Link
-              href="/practice-areas"
-              className="inline-flex items-center gap-1.5 text-sm text-brass transition-colors hover:text-parchment"
-            >
-              <ArrowRight size={14} className="rotate-180" />
-              All Services
-            </Link>
-          </Reveal>
-          <Reveal direction="up" delay={0.1}>
-            <div className="mt-6 flex items-center gap-4">
-              <PracticeIcon
-                name={area.icon}
-                size={36}
-                strokeWidth={1.5}
-                className="text-brass"
-              />
-              <h1 className="font-serif text-4xl leading-tight md:text-5xl">
-                {area.title}
-              </h1>
-            </div>
-          </Reveal>
-          <Reveal direction="up" delay={0.2}>
-            <p className="mt-6 max-w-2xl text-lg text-parchment/70">
-              {area.tagline}
+    <main className="bg-parchment text-ink">
+      <PageHero tone="ink" image kicker={area.kicker} title={area.title} lede={area.summary}>
+        <Link
+          href="/contact"
+          className="inline-flex h-12 items-center gap-2 bg-parchment px-6 font-sans text-sm font-medium tracking-wide text-ink transition-colors hover:bg-parchment-2"
+        >
+          Instruct This Division
+          <ArrowRight size={16} />
+        </Link>
+      </PageHero>
+
+      <section className="mx-auto grid max-w-6xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-12">
+        <Reveal className="lg:col-span-7">
+          {area.body.map((p, i) => (
+            <p key={i} className="mt-5 text-base leading-relaxed first:mt-0 sm:text-lg">
+              {p}
             </p>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ============ INTRO ============ */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <div className="grid gap-12 md:grid-cols-[1.4fr_1fr]">
-          <Reveal direction="left">
-            <div>
-              <h2 className="font-serif text-3xl text-ink">Overview</h2>
-              <p className="mt-5 leading-relaxed text-slate">{area.intro}</p>
-              <p className="mt-4 leading-relaxed text-slate">{area.closing}</p>
-            </div>
-          </Reveal>
-
-          <Reveal direction="right" delay={0.1}>
-            <div className="rounded-sm bg-ink p-8 text-parchment">
-              <h3 className="font-serif text-xl">Need Legal Support?</h3>
-              <p className="mt-3 text-sm leading-relaxed text-parchment/70">
-                Our team is ready to help you navigate this area of law with
-                confidence.
-              </p>
-              <a
-                href="tel:+254711205997"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-brass px-6 py-3 font-sans text-sm text-ink transition-colors hover:bg-parchment"
-              >
-                <Phone size={15} />
-                +254 711 205 997
-              </a>
-              <Link
-                href="/contact"
-                className="mt-3 inline-flex items-center gap-2 rounded-full border border-parchment/30 px-6 py-3 font-sans text-sm text-parchment transition-colors hover:border-parchment hover:bg-parchment/10"
-              >
-                Contact Us
-              </Link>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ============ WHAT IT COVERS ============ */}
-      <section className="bg-white/40 py-20 md:py-28">
-        <div className="mx-auto max-w-6xl px-6">
-          <Reveal direction="up">
-            <h2 className="font-serif text-3xl text-ink">What It Covers</h2>
-          </Reveal>
-
-          <div className="mt-10 grid gap-8 md:grid-cols-2">
-            {area.coverage.map((group, gi) => (
-              <Reveal key={group.group} direction="up" delay={gi * 0.1}>
-                <div>
-                  <h3 className="font-serif text-xl text-ink">{group.group}</h3>
-                  <ul className="mt-5 space-y-3">
-                    {group.items.map((item) => (
-                      <li key={item} className="flex items-start gap-3">
-                        <CheckCircle2
-                          size={18}
-                          className="mt-0.5 shrink-0 text-brass"
-                        />
-                        <span className="text-sm leading-relaxed text-slate">
-                          {item}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============ EXAMPLE SITUATIONS ============ */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <Reveal direction="up">
-          <h2 className="font-serif text-3xl text-ink">Example Situations</h2>
+          ))}
         </Reveal>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-3">
-          {area.exampleSituations.map((situation, i) => (
-            <Reveal key={situation} direction="up" delay={i * 0.1}>
-              <div className="h-full rounded-sm border border-ink/10 bg-white/60 p-6">
-                <span className="font-serif text-3xl text-brass">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <p className="mt-3 text-sm leading-relaxed text-slate">
-                  {situation}
-                </p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal className="lg:col-span-4 lg:col-start-9" delay={0.1}>
+          <p className="text-[0.68rem] uppercase tracking-[0.22em] text-ink/45">Typical work</p>
+          <ul className="mt-4 divide-y divide-ink/10 border-y border-ink/10">
+            {area.work.map((item, i) => (
+              <HoverUnderlineItem key={item} index={i}>
+                {item}
+              </HoverUnderlineItem>
+            ))}
+          </ul>
+        </Reveal>
       </section>
 
-      {/* ============ OTHER PRACTICE AREAS ============ */}
-      <section className="bg-ink py-20 text-parchment">
-        <div className="mx-auto max-w-6xl px-6">
-          <Reveal direction="up">
-            <h2 className="font-serif text-3xl">Explore Other Services</h2>
+      <section className="border-t border-ink/10 bg-parchment-2 px-5 py-16 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <Reveal>
+            <h2 className="font-display text-3xl">Other divisions</h2>
           </Reveal>
-
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {others.map((other, i) => (
-              <Reveal key={other.slug} direction="up" delay={i * 0.08}>
-                <Link
-                  href={`/practice-areas/${other.slug}`}
-                  className="group flex items-center justify-between border border-parchment/10 p-5 transition-colors hover:border-brass/50"
-                >
-                  <span className="font-serif text-lg text-parchment transition-colors group-hover:text-brass">
-                    {other.title}
-                  </span>
-                  <ArrowRight
-                    size={16}
-                    className="text-brass transition-transform duration-300 group-hover:translate-x-1"
-                  />
+          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+            {others.map((p, i) => (
+              <Reveal key={p.slug} delay={i * 0.05}>
+                <Link href={`/practice-areas/${p.slug}`} className="block hover:text-maroon">
+                  <p className="text-[0.68rem] uppercase tracking-[0.2em] text-ink/45">{p.kicker}</p>
+                  <p className="mt-2 font-display text-2xl">{p.title}</p>
                 </Link>
               </Reveal>
             ))}
           </div>
         </div>
       </section>
-    </>
+    </main>
   );
 }

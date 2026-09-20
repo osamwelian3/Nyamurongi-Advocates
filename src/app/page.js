@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import Hero from "@/components/Hero";
 import Reveal from "@/components/Reveal";
@@ -10,11 +11,10 @@ import CtaBanner from "@/components/CtaBanner";
 import { firm } from "@/lib/data/firm";
 import { practiceAreas } from "@/lib/data/practiceAreas";
 import { blogPosts } from "@/lib/data/blog";
+import { getArticles, mediaUrl } from "@/lib/strapi";
 
-export default function Home() {
-  const insights = [...blogPosts]
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 3);
+export default async function Home() {
+  const insights = await getLatestInsights();
 
   return (
     <>
@@ -27,6 +27,47 @@ export default function Home() {
       <CtaBanner />
     </>
   );
+}
+
+/**
+ * Pulls the 3 latest articles from Strapi, normalized to one shape
+ * regardless of source. Falls back to the local `blog.js` data if Strapi
+ * isn't reachable at build/request time — the homepage should never look
+ * broken just because the CMS is briefly down, unlike the dedicated /blog
+ * page where showing a "can't reach the CMS" message is actually useful.
+ */
+async function getLatestInsights() {
+  try {
+    const res = await getArticles({ pageSize: 3 });
+    return res.data.map((a) => ({
+      slug: a.slug,
+      title: a.title,
+      categoryLabel: a.category?.name,
+      dateLabel: a.publishedAt
+        ? new Date(a.publishedAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : null,
+      coverImageUrl: mediaUrl(a.coverImage),
+    }));
+  } catch {
+    return [...blogPosts]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 3)
+      .map((p) => ({
+        slug: p.slug,
+        title: p.title,
+        categoryLabel: p.category,
+        dateLabel: new Date(p.date).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }),
+        coverImageUrl: null,
+      }));
+  }
 }
 
 function Stats() {
@@ -125,18 +166,25 @@ function Insights({ items }) {
             <Reveal key={a.slug} delay={i * 0.05}>
               <Link href={`/blog/${a.slug}`} className="group block">
                 <div className="aspect-[4/3] overflow-hidden">
-                  <PhotoPlaceholder
-                    label={a.category}
-                    aspect="aspect-[4/3]"
-                    className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
+                  {a.coverImageUrl ? (
+                    <Image
+                      src={a.coverImageUrl}
+                      alt=""
+                      width={600}
+                      height={450}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                  ) : (
+                    <PhotoPlaceholder
+                      label={a.categoryLabel}
+                      aspect="aspect-[4/3]"
+                      className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]"
+                    />
+                  )}
                 </div>
                 <p className="mt-4 text-[0.68rem] uppercase tracking-[0.18em] text-parchment/50">
-                  {new Date(a.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {a.dateLabel}
+                  {a.categoryLabel ? ` \u00b7 ${a.categoryLabel}` : ""}
                 </p>
                 <h3 className="mt-2 font-display text-2xl leading-snug group-hover:text-brass">
                   {a.title}

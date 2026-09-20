@@ -2,9 +2,18 @@ import axios from "axios";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
+/**
+ * Strapi 5's REST API returns a flat shape — fields live directly on the
+ * object (article.title, article.author.name), not nested under
+ * `.attributes` the way Strapi 4 did. Relations, updates, and filters all
+ * key off `documentId` (a persistent string id), not the numeric `id`.
+ * If you're reading older Strapi tutorials/blog posts, watch for this —
+ * a lot of copy-pasted v4-shaped code silently returns `undefined` on v5.
+ */
+
 // Server-side only — never expose this token to the browser bundle.
 // Used for reads that need the API token (e.g. approved testimonials,
-// which the Public role deliberately can't read directly — see cms/SETUP.md step 5).
+// which the Public role deliberately can't read directly — see cms/SETUP.md).
 const strapiServer = axios.create({
   baseURL: `${STRAPI_URL}/api`,
   headers: {
@@ -18,6 +27,12 @@ const strapiPublic = axios.create({
   baseURL: `${STRAPI_URL}/api`,
 });
 
+/** Prefixes a Strapi media object's relative URL with the Strapi origin. */
+export function mediaUrl(media) {
+  if (!media?.url) return null;
+  return media.url.startsWith("http") ? media.url : `${STRAPI_URL}${media.url}`;
+}
+
 /**
  * Fetch all published articles, newest first, with author/category populated.
  */
@@ -29,7 +44,15 @@ export async function getArticles({ page = 1, pageSize = 10 } = {}) {
       pagination: { page, pageSize },
     },
   });
-  return data;
+  return data; // { data: [article, ...], meta: { pagination } }
+}
+
+/** Fetch every published article's slug — used by generateStaticParams. */
+export async function getAllArticleSlugs() {
+  const { data } = await strapiPublic.get("/articles", {
+    params: { fields: ["slug"], pagination: { pageSize: 100 } },
+  });
+  return data.data.map((a) => a.slug);
 }
 
 /**
@@ -50,7 +73,7 @@ export async function getArticleBySlug(slug) {
   const { data: commentsData } = await strapiPublic.get("/comments", {
     params: {
       filters: {
-        article: { id: { $eq: article.id } },
+        article: { documentId: { $eq: article.documentId } },
         status: { $eq: "approved" },
       },
       populate: ["parent"],
@@ -66,10 +89,10 @@ export async function getArticleBySlug(slug) {
  */
 function buildCommentTree(flatComments) {
   const topLevel = [];
-  const byId = new Map(flatComments.map((c) => [c.id, { ...c, replies: [] }]));
+  const byId = new Map(flatComments.map((c) => [c.documentId, { ...c, replies: [] }]));
 
   for (const comment of byId.values()) {
-    const parentId = comment.attributes?.parent?.data?.id;
+    const parentId = comment.parent?.documentId;
     if (parentId && byId.has(parentId)) {
       byId.get(parentId).replies.push(comment);
     } else {
@@ -80,18 +103,24 @@ function buildCommentTree(flatComments) {
 }
 
 /**
- * Submit a new comment (or reply, if parentId is provided).
+ * Submit a new comment (or reply, if parentDocumentId is provided).
  * Always lands as `status: pending` — enforced server-side by the
  * Strapi lifecycle hook regardless of what's sent here.
  */
-export async function submitComment({ articleId, content, authorName, authorEmail, parentId = null }) {
+export async function submitComment({
+  articleDocumentId,
+  content,
+  authorName,
+  authorEmail,
+  parentDocumentId = null,
+}) {
   const { data } = await strapiPublic.post("/comments", {
     data: {
       content,
       authorName,
       authorEmail,
-      article: articleId,
-      ...(parentId ? { parent: parentId } : {}),
+      article: articleDocumentId,
+      ...(parentDocumentId ? { parent: parentDocumentId } : {}),
     },
   });
   return data;

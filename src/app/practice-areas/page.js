@@ -1,42 +1,32 @@
+import PageHero from "@/components/PageHero";
+import PracticeAreaRow from "@/components/PracticeAreaRow";
 import { practiceAreas } from "@/lib/data/practiceAreas";
-import Reveal from "@/components/Reveal";
-import PracticeAreaCard from "@/components/PracticeAreaCard";
+import { firm } from "@/lib/data/firm";
 
-export default function PracticeAreasPage() {
+export const metadata = {
+  title: `Expertise | ${firm.name}`,
+  description:
+    "Six working divisions at Nyamurongi & Company Advocates: litigation, probate, conveyancing, commercial & corporate, employment, and land.",
+};
+
+export default function PracticeAreasIndex() {
   return (
-    <>
-      {/* ============ PAGE HERO ============ */}
-      <section className="bg-ink text-parchment">
-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-          <Reveal direction="up">
-            <p className="font-sans text-sm tracking-[0.2em] text-brass">
-              Our Services
-            </p>
-          </Reveal>
-          <Reveal direction="up" delay={0.1}>
-            <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight md:text-5xl">
-              Our Legal Services for You
-            </h1>
-          </Reveal>
-          <Reveal direction="up" delay={0.2}>
-            <p className="mt-6 max-w-2xl leading-relaxed text-parchment/70">
-              At Nyamurongi & Co. Advocates, we offer the following legal
-              services.
-            </p>
-          </Reveal>
-        </div>
-      </section>
+    <main className="bg-parchment text-ink">
+      <PageHero
+        tone="ink"
+        image
+        kicker="Expertise"
+        title="Our working divisions."
+        lede="Litigation, probate, conveyancing and commercial — with employment and land as the files that keep those divisions honest."
+      />
 
-      {/* ============ PRACTICE AREAS GRID ============ */}
-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+        <div className="grid gap-10">
           {practiceAreas.map((area, i) => (
-            <Reveal key={area.slug} direction="up" delay={(i % 3) * 0.08}>
-              <PracticeAreaCard area={area} />
-            </Reveal>
+            <PracticeAreaRow key={area.slug} area={area} index={i} />
           ))}
         </div>
       </section>
-    </>
+    </main>
   );
 }

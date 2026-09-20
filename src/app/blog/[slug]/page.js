@@ -1,124 +1,124 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowRight, Calendar, User } from "lucide-react";
-import { getBlogPostBySlug, blogPosts } from "@/lib/data/blog";
-import CommentThread from "@/components/CommentThread";
+import Image from "next/image";
+import PageHero from "@/components/PageHero";
 import Reveal from "@/components/Reveal";
+import CommentThread from "@/components/CommentThread";
+import PhotoPlaceholder from "@/components/PhotoPlaceholder";
+import { getArticleBySlug, getAllArticleSlugs, mediaUrl } from "@/lib/strapi";
+import { firm } from "@/lib/data/firm";
 
-export function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
+// Runs only during `next build` (including the static export used for
+// GH Pages) — requires Strapi to be reachable at build time. This is why
+// `npm run deploy` must be run while your local Strapi is running: the
+// build itself needs to ask it "what articles exist?" up front, since a
+// static export has no server left afterward to ask that question live.
+export async function generateStaticParams() {
+  try {
+    const slugs = await getAllArticleSlugs();
+    return slugs.map((slug) => ({ slug }));
+  } catch {
+    // Strapi unreachable at build time — build the site with zero article
+    // pages rather than failing the whole deploy. Fix by ensuring Strapi
+    // is running before `npm run deploy`.
+    return [];
+  }
 }
 
-export function generateMetadata({ params }) {
-  const post = getBlogPostBySlug(params.slug);
-  if (!post) return { title: "Article Not Found" };
+export async function generateMetadata({ params }) {
+  const result = await getArticleBySlug(params.slug).catch(() => null);
+  if (!result) return {};
   return {
-    title: `${post.title} | Nyamurongi & Co. Advocates`,
-    description: post.excerpt,
+    title: `${result.article.title} | ${firm.name}`,
+    description: result.article.excerpt,
   };
 }
 
-function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+export default async function ArticleDetail({ params }) {
+  let result;
+  try {
+    result = await getArticleBySlug(params.slug);
+  } catch (err) {
+    return (
+      <main className="bg-parchment px-5 py-24 text-center text-ink sm:px-8">
+        <p className="font-medium text-maroon">Couldn&rsquo;t reach the CMS.</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-ink/70">
+          This page reads from Strapi at{" "}
+          <code className="bg-ink/10 px-1.5 py-0.5">
+            {process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337"}
+          </code>
+          . Start it locally with <code className="bg-ink/10 px-1.5 py-0.5">npm run develop</code>{" "}
+          and refresh.
+        </p>
+      </main>
+    );
+  }
 
-export default function BlogPostPage({ params }) {
-  const post = getBlogPostBySlug(params.slug);
-  if (!post) notFound();
+  if (!result) notFound();
+  const { article, comments } = result;
 
-  const related = blogPosts.filter((p) => p.slug !== post.slug).slice(0, 2);
+  // Strapi's richtext field returns a single markdown string. Rendered
+  // here as plain paragraphs split on blank lines — enough for how this
+  // chambers writes (no embedded images/tables in body copy) without
+  // pulling in a full markdown renderer for six short articles.
+  const paragraphs = (article.content || "").split(/\n\s*\n/).filter(Boolean);
 
   return (
-    <>
-      {/* ============ PAGE HERO ============ */}
-      <section className="bg-ink text-parchment">
-        <div className="mx-auto max-w-4xl px-6 py-20 md:py-28">
-          <Reveal direction="up">
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-1.5 text-sm text-brass transition-colors hover:text-parchment"
-            >
-              <ArrowRight size={14} className="rotate-180" />
-              Back to Blog
-            </Link>
-          </Reveal>
-          <Reveal direction="up" delay={0.1}>
-            <h1 className="mt-6 font-serif text-3xl leading-tight md:text-5xl">
-              {post.title}
-            </h1>
-          </Reveal>
-          <Reveal direction="up" delay={0.2}>
-            <div className="mt-6 flex flex-wrap items-center gap-5 text-sm text-parchment/60">
-              <span className="inline-flex items-center gap-1.5">
-                <User size={14} />
-                {post.author}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Calendar size={14} />
-                {formatDate(post.date)}
-              </span>
-              <span className="rounded-full border border-parchment/20 px-3 py-0.5 text-xs">
-                {post.category}
-              </span>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+    <main className="bg-parchment text-ink">
+      <PageHero
+        tone="ink"
+        image
+        kicker={article.category?.name || "Insights"}
+        title={article.title}
+        lede={article.excerpt}
+      />
 
-      {/* ============ ARTICLE BODY ============ */}
-      <article className="mx-auto max-w-3xl px-6 py-16 md:py-24">
-        <Reveal direction="up">
-          <div className="space-y-6">
-            {post.content.map((paragraph, i) => (
-              <p key={i} className="leading-relaxed text-slate">
-                {paragraph}
+      <article className="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-24">
+        {article.coverImage && (
+          <Reveal className="mb-10 overflow-hidden">
+            <Image
+              src={mediaUrl(article.coverImage)}
+              alt=""
+              width={1200}
+              height={700}
+              className="w-full"
+            />
+          </Reveal>
+        )}
+
+        <Reveal>
+          {paragraphs.length > 0 ? (
+            paragraphs.map((p, i) => (
+              <p key={i} className="mt-5 text-base leading-relaxed first:mt-0 sm:text-lg">
+                {p}
               </p>
-            ))}
-          </div>
+            ))
+          ) : (
+            <p className="text-ink/60">This article has no body content yet.</p>
+          )}
         </Reveal>
 
-        {/* ============ COMMENTS ============ */}
-        <Reveal direction="up" delay={0.1}>
-          <CommentThread
-            articleId={post.slug}
-            initialComments={post.comments}
-          />
-        </Reveal>
-      </article>
-
-      {/* ============ RELATED POSTS ============ */}
-      {related.length > 0 && (
-        <section className="bg-white/40 py-16 md:py-24">
-          <div className="mx-auto max-w-6xl px-6">
-            <Reveal direction="up">
-              <h2 className="font-serif text-2xl text-ink">Related Articles</h2>
-            </Reveal>
-
-            <div className="mt-8 grid gap-6 md:grid-cols-2">
-              {related.map((r, i) => (
-                <Reveal key={r.slug} direction="up" delay={i * 0.1}>
-                  <Link
-                    href={`/blog/${r.slug}`}
-                    className="group block border border-ink/10 bg-white/60 p-7 transition-colors hover:border-maroon/40"
-                  >
-                    <p className="text-xs text-brass">{formatDate(r.date)}</p>
-                    <h3 className="mt-3 font-serif text-xl leading-snug text-ink transition-colors group-hover:text-maroon">
-                      {r.title}
-                    </h3>
-                    <p className="mt-3 line-clamp-2 text-sm text-slate">
-                      {r.excerpt}
-                    </p>
-                  </Link>
-                </Reveal>
-              ))}
+        <Reveal delay={0.1} className="mt-10 flex items-center gap-3 border-t border-ink/10 pt-6">
+          {article.author?.avatar ? (
+            <Image
+              src={mediaUrl(article.author.avatar)}
+              alt=""
+              width={40}
+              height={40}
+              className="h-10 w-10 object-cover"
+            />
+          ) : (
+            <div className="h-10 w-10 shrink-0">
+              <PhotoPlaceholder aspect="h-10" className="h-10 w-10" />
             </div>
+          )}
+          <div>
+            <p className="text-sm font-medium">{article.author?.name || "Chambers"}</p>
+            <p className="text-xs text-ink/45">{article.author?.role}</p>
           </div>
-        </section>
-      )}
-    </>
+        </Reveal>
+
+        <CommentThread articleDocumentId={article.documentId} initialComments={comments} />
+      </article>
+    </main>
   );
 }

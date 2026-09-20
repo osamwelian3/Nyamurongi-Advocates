@@ -33,24 +33,28 @@ Visit http://localhost:3000
 - [x] Step 3 — Strapi content-type schemas (`cms/`): Article, Author, Category,
       Comment (nested replies + moderation), Practice Area, Team Member,
       Testimonial (moderation). See `cms/SETUP.md` for install + role config.
-      Next.js API client wired at `src/lib/strapi.js`.
-- [x] Step 4 — GSAP preloader + global ScrollTrigger setup (`src/lib/gsap.js`,
-      `src/components/Preloader.jsx`, `src/components/SiteHeader.jsx`,
-      `src/components/SiteFooter.jsx`, wired into `src/app/layout.js`)
-- [x] Step 5a — Home page complete (Hero, About/Stats, Services grid,
-      CTA banner, Testimonials carousel, Latest Insights) — see
-      `src/app/page.js` and `src/components/`
-- [ ] Step 5b — Practice Area detail pages
-- [ ] Step 5c — Team / About page
-- [ ] Step 5d — Contact page + form wiring
-- [ ] Step 5e — Blog index + article pages + nested comment UI
+      Next.js API client wired at `src/lib/strapi.js` (not yet connected —
+      site currently runs on the static data files in `src/lib/data/`).
+- [x] Step 4 — GSAP preloader + global ScrollTrigger setup
+- [x] Home (`/`)
+- [x] Practice Areas (`/practice-areas`, `/practice-areas/[slug]`) — 6 divisions
+- [x] Team (`/team`, `/team/[slug]`)
+- [x] About (`/about`)
+- [ ] Blog (`/blog`, `/blog/[slug]`) — index + nested comment UI wired to Strapi
+- [ ] Contact (`/contact`) — form + address/phone/hours block
+- [ ] Testimonials (`/testimonials`, submission form) — wired to Strapi
+- [ ] Swap static data files for live Strapi fetches once a Strapi instance exists
+- [ ] Strapi hosting decision + deployment
+- [ ] Polish pass: custom 404, sitemap.xml, robots.txt, Open Graph tags, favicon
 
-## Real content extracted from the live site (via uploaded page exports)
+## Real content, sourced from the reference codebase (confirmed factual)
 
-- 7 practice areas with full "what it covers" + "example situations" copy
-- Herbert Nyamurongi (Sr. Advocate, CEO), 25+ years experience, 91% case success rate
-- Contact: +254 711 205 997 · info@nyamurongiadvocates.local · Lengetia Place, 2nd Floor, Moi Highway, Kisii
-- 3 real blog posts, testimonials, and the "Submit a Testimonial" form fields
+- 6 practice divisions: Litigation, Probate & Succession, Conveyancing & Real
+  Estate, Commercial & Corporate, Employment & Labour, Land & Environment
+- Counsel: H. Nyamurongi (Managing Partner), L. Kebungo (Associate Advocate)
+- Contact: +254 711 205 997 · info@nyamurongiadvocates.com · Lengetia Place,
+  2nd Floor, Moi Highway, Kisii — all centralized in `src/lib/site-config.js`
+- 6 real blog articles, 4 matters on the public record, firm stats and values
 
 ## Deploying to GitHub Pages
 

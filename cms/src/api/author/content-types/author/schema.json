@@ -15,6 +15,10 @@
       "type": "string",
       "required": true
     },
+    "role": {
+      "type": "string",
+      "description": "e.g. 'Managing Partner', 'Chambers'"
+    },
     "bio": {
       "type": "text"
     },

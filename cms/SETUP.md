@@ -23,6 +23,18 @@ project's `src/api/` directory, overwriting nothing that doesn't already exist:
 cp -r /path/to/nyamurongi-advocates/cms/src/api/* nyamurongi-cms/src/api/
 ```
 
+Each content type's folder contains four things:
+- `content-types/<name>/schema.json` — the data model
+- `routes/<name>.js`, `controllers/<name>.js`, `services/<name>.js` — the
+  standard core CRUD boilerplate that actually exposes it as a REST API
+
+All four are required. The Content-Type Builder UI in the Strapi Admin
+writes all four automatically when you create a type by hand there — but
+since these were authored directly as files, all four had to be written
+out explicitly. If a content type doesn't show up in **Settings → Users &
+Permissions Plugin → Roles** with any actions to toggle, that's the
+symptom of the routes/controllers/services trio being missing for it.
+
 This gives you 7 content types:
 
 | Content type      | Purpose                                                          |
