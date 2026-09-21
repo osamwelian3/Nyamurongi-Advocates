@@ -11,12 +11,9 @@ export const metadata = {
   description: "Notes from the chambers desk — practice, succession, land, and counsel.",
 };
 
-// Static (baked in at build time) for the GH Pages export, since that
-// target has no server to render on-demand. Dynamic (re-fetched on every
-// request) everywhere else — a real Node host (the VPS) — so a newly
-// published article shows up immediately without a rebuild. Both builds
-// come from this one file; only the DEPLOY_TARGET env var differs.
-export const dynamic = process.env.DEPLOY_TARGET === "gh-pages" ? "force-static" : "force-dynamic";
+// Re-fetches from Strapi on every request rather than caching a build-time
+// snapshot, so newly published articles show up without a rebuild.
+export const dynamic = "force-dynamic";
 
 export default async function BlogIndex() {
   let articles = [];

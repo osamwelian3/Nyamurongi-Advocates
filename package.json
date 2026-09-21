@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "predeploy": "DEPLOY_TARGET=gh-pages next build && touch out/.nojekyll",
-    "deploy": "gh-pages -d out --dotfiles"
+    "lint": "next lint"
   },
   "dependencies": {
     "next": "^15.0.0",
@@ -23,7 +21,6 @@
     "@tailwindcss/postcss": "^4.0.0",
     "postcss": "^8.4.49",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^15.0.0",
-    "gh-pages": "^6.1.1"
+    "eslint-config-next": "^15.0.0"
   }
 }

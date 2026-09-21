@@ -56,31 +56,25 @@ Visit http://localhost:3000
   2nd Floor, Moi Highway, Kisii — all centralized in `src/lib/site-config.js`
 - 6 real blog articles, 4 matters on the public record, firm stats and values
 
-## Deploying to GitHub Pages
+## Deploying to the VPS
 
-One-time setup:
+The site runs as a normal Node server (not a static export) on the
+InterServer VPS at `74.50.87.101`, alongside a Strapi instance on port
+`1338`. Every page that reads from Strapi (`/`, `/blog`, `/blog/[slug]`)
+is marked `export const dynamic = "force-dynamic"`, so content updates
+show up on a plain refresh — no rebuild required for new articles or
+approved comments.
+
+A rebuild + restart is only needed when the code itself changes:
 
 ```bash
-npm install
+git pull
+npm install   # only if package.json changed
+npm run build
+# then restart however the process is managed (e.g. pm2 restart <name>)
 ```
 
-Then, whenever you want to publish the current state of the site:
+Make sure the VPS's actual runtime environment (not just a local
+`.env.local`) has `NEXT_PUBLIC_STRAPI_URL` pointed at the VPS's Strapi —
+currently `http://74.50.87.101:1338`.
 
-```bash
-npm run deploy
-```
-
-This builds a static export (`out/`) with the GitHub Pages subpath baked
-in, then pushes it to the `gh-pages` branch via the `gh-pages` package.
-
-**One-time repo setting** (not something a script can do for you): in the
-GitHub repo, go to **Settings → Pages**, set **Source** to **"Deploy from
-a branch"**, and **Branch** to **gh-pages**. After the first `npm run
-deploy`, the site is live at:
-
-`https://osamwelian3.github.io/Nyamurongi-Advocates/`
-
-Note: only one Pages source can be active at a time. If a GitHub Actions
-workflow for Pages exists, remove it (or switch the Source setting away
-from "GitHub Actions") before using this branch-based approach — the two
-will otherwise conflict over which deploy "wins."

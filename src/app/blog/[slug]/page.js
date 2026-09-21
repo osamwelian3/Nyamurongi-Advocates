@@ -4,34 +4,13 @@ import PageHero from "@/components/PageHero";
 import Reveal from "@/components/Reveal";
 import CommentThread from "@/components/CommentThread";
 import PhotoPlaceholder from "@/components/PhotoPlaceholder";
-import { getArticleBySlug, getAllArticleSlugs, mediaUrl } from "@/lib/strapi";
+import { getArticleBySlug, mediaUrl } from "@/lib/strapi";
 import { firm } from "@/lib/data/firm";
 
-// Static (baked in at build time, using generateStaticParams below) for
-// the GH Pages export, since that target has no server to render
-// on-demand. Dynamic (re-fetched on every request, any slug resolved
-// live — generateStaticParams is simply bypassed) everywhere else, i.e.
-// a real Node host like the VPS. Both builds come from this one file;
-// only the DEPLOY_TARGET env var differs.
-export const dynamic = process.env.DEPLOY_TARGET === "gh-pages" ? "force-static" : "force-dynamic";
-
-// Runs only during `next build` when the route above resolves to
-// "force-static" (the GH Pages export) — requires Strapi to be reachable
-// at build time. This is why `npm run deploy` must be run while your
-// local Strapi is running: the build itself needs to ask it "what
-// articles exist?" up front, since a static export has no server left
-// afterward to ask that question live.
-export async function generateStaticParams() {
-  try {
-    const slugs = await getAllArticleSlugs();
-    return slugs.map((slug) => ({ slug }));
-  } catch {
-    // Strapi unreachable at build time — build the site with zero article
-    // pages rather than failing the whole deploy. Fix by ensuring Strapi
-    // is running before `npm run deploy`.
-    return [];
-  }
-}
+// Renders any article slug live from Strapi on every request — no
+// generateStaticParams needed since nothing here is pre-rendered at
+// build time.
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }) {
   const result = await getArticleBySlug(params.slug).catch(() => null);
