@@ -13,6 +13,13 @@ import { practiceAreas } from "@/lib/data/practiceAreas";
 import { blogPosts } from "@/lib/data/blog";
 import { getArticles, mediaUrl } from "@/lib/strapi";
 
+// Static (baked in at build time) for the GH Pages export, since that
+// target has no server to render on-demand. Dynamic (re-fetched on every
+// request) everywhere else — a real Node host (the VPS) — so a newly
+// published article shows up immediately without a rebuild. Both builds
+// come from this one file; only the DEPLOY_TARGET env var differs.
+export const dynamic = process.env.DEPLOY_TARGET === "gh-pages" ? "force-static" : "force-dynamic";
+
 export default async function Home() {
   const insights = await getLatestInsights();
 

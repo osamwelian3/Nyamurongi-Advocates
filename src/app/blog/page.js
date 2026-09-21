@@ -11,12 +11,12 @@ export const metadata = {
   description: "Notes from the chambers desk — practice, succession, land, and counsel.",
 };
 
-// Fetches at build time (static export) or per-request in `next dev` /
-// a Node-capable host. NOT set to force-dynamic: that flag is incompatible
-// with `output: 'export'` (see next.config.js) and would break `npm run
-// deploy`. Once Strapi is hosted and this moves off GitHub Pages to a
-// Node host, this comment (and the build-time-only limitation it implies)
-// can go away.
+// Static (baked in at build time) for the GH Pages export, since that
+// target has no server to render on-demand. Dynamic (re-fetched on every
+// request) everywhere else — a real Node host (the VPS) — so a newly
+// published article shows up immediately without a rebuild. Both builds
+// come from this one file; only the DEPLOY_TARGET env var differs.
+export const dynamic = process.env.DEPLOY_TARGET === "gh-pages" ? "force-static" : "force-dynamic";
 
 export default async function BlogIndex() {
   let articles = [];

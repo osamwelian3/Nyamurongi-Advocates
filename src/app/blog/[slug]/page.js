@@ -7,11 +7,20 @@ import PhotoPlaceholder from "@/components/PhotoPlaceholder";
 import { getArticleBySlug, getAllArticleSlugs, mediaUrl } from "@/lib/strapi";
 import { firm } from "@/lib/data/firm";
 
-// Runs only during `next build` (including the static export used for
-// GH Pages) — requires Strapi to be reachable at build time. This is why
-// `npm run deploy` must be run while your local Strapi is running: the
-// build itself needs to ask it "what articles exist?" up front, since a
-// static export has no server left afterward to ask that question live.
+// Static (baked in at build time, using generateStaticParams below) for
+// the GH Pages export, since that target has no server to render
+// on-demand. Dynamic (re-fetched on every request, any slug resolved
+// live — generateStaticParams is simply bypassed) everywhere else, i.e.
+// a real Node host like the VPS. Both builds come from this one file;
+// only the DEPLOY_TARGET env var differs.
+export const dynamic = process.env.DEPLOY_TARGET === "gh-pages" ? "force-static" : "force-dynamic";
+
+// Runs only during `next build` when the route above resolves to
+// "force-static" (the GH Pages export) — requires Strapi to be reachable
+// at build time. This is why `npm run deploy` must be run while your
+// local Strapi is running: the build itself needs to ask it "what
+// articles exist?" up front, since a static export has no server left
+// afterward to ask that question live.
 export async function generateStaticParams() {
   try {
     const slugs = await getAllArticleSlugs();
