@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Facebook, Twitter, Youtube, Linkedin } from "lucide-react";
+import Logo from "@/components/Logo";
 
 const COLUMNS = [
   {
@@ -41,16 +42,7 @@ export default function SiteFooter() {
         <div className="grid gap-12 md:grid-cols-[1.3fr_1fr_1fr_1fr]">
           <div>
             <div className="flex items-center gap-2.5">
-              <svg width="24" height="24" viewBox="0 0 72 72" fill="none">
-                <path
-                  d="M36 4 L68 36 L36 68 L4 36 Z M22 50 L22 22 L50 50 L50 22"
-                  stroke="#a98139"
-                  strokeWidth="4"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="font-display text-lg">Nyamurongi &amp; Co.</span>
+              <Logo variant="reversed" className="h-11 w-auto" />
             </div>
             <p className="mt-3 max-w-xs text-sm text-parchment/50">
               Advocates of the High Court of Kenya. Legal representation, on the record.

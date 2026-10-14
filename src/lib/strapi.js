@@ -74,7 +74,7 @@ export async function getArticleBySlug(slug) {
     params: {
       filters: {
         article: { documentId: { $eq: article.documentId } },
-        moderationStatus: { $eq: "approved" },
+        status: { $eq: "approved" },
       },
       populate: ["parent"],
       sort: ["createdAt:asc"],
@@ -144,7 +144,7 @@ export async function submitTestimonial({ fullName, email, companyName, companyW
 export async function getApprovedTestimonials() {
   const { data } = await strapiServer.get("/testimonials", {
     params: {
-      filters: { moderationStatus: { $eq: "approved" } },
+      filters: { status: { $eq: "approved" } },
       populate: ["photo"],
       sort: ["createdAt:desc"],
     },

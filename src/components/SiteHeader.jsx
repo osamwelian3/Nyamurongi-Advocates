@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X, Phone } from "lucide-react";
 import { ScrollTrigger } from "@/lib/gsap";
 import { siteConfig } from "@/lib/site-config";
+import Logo from "@/components/Logo";
 
 const NAV_LINKS = [
   { href: "/practice-areas", label: "Practice Areas" },
@@ -35,16 +36,7 @@ export default function SiteHeader() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <svg width="26" height="26" viewBox="0 0 72 72" fill="none">
-            <path
-              d="M36 4 L68 36 L36 68 L4 36 Z M22 50 L22 22 L50 50 L50 22"
-              stroke="#a98139"
-              strokeWidth="4"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="font-display text-lg text-parchment">Nyamurongi &amp; Co.</span>
+          <Logo variant="reversed" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
