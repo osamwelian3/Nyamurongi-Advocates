@@ -3,6 +3,9 @@ import "./globals.css";
 import Preloader from "@/components/Preloader";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import ThemeHead from "@/components/ThemeHead";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
+import { DEFAULT_THEME } from "@/lib/themes";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
@@ -25,12 +28,16 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${outfit.variable}`}>
+    <html lang="en" data-theme={DEFAULT_THEME} suppressHydrationWarning className={`${cormorant.variable} ${outfit.variable}`}>
+      <head>
+        <ThemeHead />
+      </head>
       <body className="bg-ink font-sans text-fg antialiased">
         <Preloader />
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />
+        <ThemeSwitcher />
       </body>
     </html>
   );

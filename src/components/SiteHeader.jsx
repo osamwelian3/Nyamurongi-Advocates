@@ -36,7 +36,7 @@ export default function SiteHeader() {
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
         <Link href="/" className="flex items-center gap-2.5">
-          <Logo variant="reversed" className="h-9 w-auto" />
+          <Logo variant="color" className="h-9 w-auto" />
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex">
