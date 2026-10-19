@@ -7,11 +7,12 @@ import Counter from "@/components/Counter";
 import PracticeAreaCard from "@/components/PracticeAreaCard";
 import Matters from "@/components/Matters";
 import PhotoPlaceholder from "@/components/PhotoPlaceholder";
+import CmsImage from "@/components/CmsImage";
 import CtaBanner from "@/components/CtaBanner";
 import { firm } from "@/lib/data/firm";
 import { practiceAreas } from "@/lib/data/practiceAreas";
 import { blogPosts } from "@/lib/data/blog";
-import { getArticles, mediaUrl } from "@/lib/strapi";
+import { getArticles, getHomePage, mediaUrl, toImage } from "@/lib/strapi";
 
 // Re-fetches Strapi data on every request instead of caching a build-time
 // snapshot, so a newly published article (or approved comment) shows up
@@ -19,19 +20,38 @@ import { getArticles, mediaUrl } from "@/lib/strapi";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const insights = await getLatestInsights();
+  const [insights, content] = await Promise.all([getLatestInsights(), getHomeContent()]);
 
   return (
     <>
-      <Hero />
+      <Hero backgroundImage={content.heroImage} />
       <Stats />
       <PracticePreview />
-      <FirmStrip />
+      <FirmStrip image={content.firmImage} />
       <Matters />
       <Insights items={insights} />
       <CtaBanner />
     </>
   );
+}
+
+/**
+ * Images (and, section by section later, text) for the homepage, managed in
+ * Strapi's "Home Page" single type. If the CMS is unreachable or a slot is
+ * empty, the slot comes back null and the page shows the gradient
+ * placeholder instead of breaking.
+ */
+async function getHomeContent() {
+  try {
+    const page = await getHomePage();
+    return {
+      heroImage: toImage(page?.hero?.backgroundImage),
+      firmImage: toImage(page?.firmStrip?.image),
+    };
+  } catch (err) {
+    console.error("[home] Could not load Home Page content from Strapi:", err.message);
+    return { heroImage: null, firmImage: null };
+  }
 }
 
 /**
@@ -116,15 +136,15 @@ function PracticePreview() {
   );
 }
 
-function FirmStrip() {
+function FirmStrip({ image }) {
   return (
     <section className="relative overflow-hidden bg-ink text-parchment">
       <div className="mx-auto grid max-w-6xl items-center lg:grid-cols-2">
         <div className="relative min-h-[22rem] lg:min-h-[36rem]">
-          <PhotoPlaceholder
-            label="Morning mist over the Kisii highlands"
-            aspect="h-full"
-            className="absolute inset-0 h-full w-full"
+          <CmsImage
+            image={image}
+            sizes="(min-width: 1024px) 576px, 100vw"
+            placeholderLabel="Morning mist over the Kisii highlands"
           />
         </div>
         <div className="px-5 py-16 sm:px-12 sm:py-24">

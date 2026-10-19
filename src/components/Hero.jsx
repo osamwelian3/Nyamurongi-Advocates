@@ -4,12 +4,12 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Phone, ArrowRight } from "lucide-react";
 import { gsap } from "@/lib/gsap";
-import PhotoPlaceholder from "@/components/PhotoPlaceholder";
+import CmsImage from "@/components/CmsImage";
 import { firm } from "@/lib/data/firm";
 
 const HEADLINE_WORDS = ["The", "record", "you", "can", "rely", "on."];
 
-export default function Hero() {
+export default function Hero({ backgroundImage = null }) {
   const sectionRef = useRef(null);
   const bgRef = useRef(null);
   const eyebrowRef = useRef(null);
@@ -75,10 +75,11 @@ export default function Hero() {
   return (
     <section ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-ink text-parchment">
       <div ref={bgRef} className="absolute inset-0 -top-[10%] h-[120%]">
-        <PhotoPlaceholder
-          label="Firm portrait — advocates in chambers"
-          aspect="h-full"
-          className="h-full w-full"
+        <CmsImage
+          image={backgroundImage}
+          priority
+          sizes="100vw"
+          placeholderLabel="Firm portrait — advocates in chambers"
         />
       </div>
       <div className="absolute inset-0 bg-ink/70" />

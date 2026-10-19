@@ -1,4 +1,5 @@
 import axios from "axios";
+import { buildImage } from "@/lib/cms-image";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -31,6 +32,34 @@ const strapiPublic = axios.create({
 export function mediaUrl(media) {
   if (!media?.url) return null;
   return media.url.startsWith("http") ? media.url : `${STRAPI_URL}${media.url}`;
+}
+
+/** Turns a populated Strapi `shared.image` component into { src, alt, focus } for <CmsImage> (null if empty). */
+export function toImage(slot) {
+  return buildImage(slot, mediaUrl);
+}
+
+/**
+ * The "Home Page" single type: one component per homepage section, each
+ * holding that section's images. Returns null if it hasn't been created and
+ * PUBLISHED in Strapi yet (Strapi answers 404 until then); any other
+ * failure (CMS down, permissions) is thrown so the caller can log it.
+ *
+ * Nested component -> component -> media needs explicit dot-notation
+ * populate paths; populate=* only goes one level deep.
+ */
+export async function getHomePage() {
+  try {
+    const { data } = await strapiPublic.get("/home-page", {
+      params: {
+        populate: ["hero.backgroundImage.file", "firmStrip.image.file"],
+      },
+    });
+    return data.data;
+  } catch (err) {
+    if (err.response?.status === 404) return null;
+    throw err;
+  }
 }
 
 /**

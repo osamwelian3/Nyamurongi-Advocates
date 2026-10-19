@@ -1,0 +1,255 @@
+diff -ruN a/src/app/page.js b/src/app/page.js
+--- a/src/app/page.js	2026-10-18 11:52:34.171656802 +0000
++++ b/src/app/page.js	2026-10-18 11:52:34.172716318 +0000
+@@ -7,11 +7,12 @@
+ import PracticeAreaCard from "@/components/PracticeAreaCard";
+ import Matters from "@/components/Matters";
+ import PhotoPlaceholder from "@/components/PhotoPlaceholder";
++import CmsImage from "@/components/CmsImage";
+ import CtaBanner from "@/components/CtaBanner";
+ import { firm } from "@/lib/data/firm";
+ import { practiceAreas } from "@/lib/data/practiceAreas";
+ import { blogPosts } from "@/lib/data/blog";
+-import { getArticles, mediaUrl } from "@/lib/strapi";
++import { getArticles, getHomePage, mediaUrl, toImage } from "@/lib/strapi";
+ 
+ // Re-fetches Strapi data on every request instead of caching a build-time
+ // snapshot, so a newly published article (or approved comment) shows up
+@@ -19,14 +20,14 @@
+ export const dynamic = "force-dynamic";
+ 
+ export default async function Home() {
+-  const insights = await getLatestInsights();
++  const [insights, content] = await Promise.all([getLatestInsights(), getHomeContent()]);
+ 
+   return (
+     <>
+-      <Hero />
++      <Hero backgroundImage={content.heroImage} />
+       <Stats />
+       <PracticePreview />
+-      <FirmStrip />
++      <FirmStrip image={content.firmImage} />
+       <Matters />
+       <Insights items={insights} />
+       <CtaBanner />
+@@ -35,6 +36,25 @@
+ }
+ 
+ /**
++ * Images (and, section by section later, text) for the homepage, managed in
++ * Strapi's "Home Page" single type. If the CMS is unreachable or a slot is
++ * empty, the slot comes back null and the page shows the gradient
++ * placeholder instead of breaking.
++ */
++async function getHomeContent() {
++  try {
++    const page = await getHomePage();
++    return {
++      heroImage: toImage(page?.hero?.backgroundImage),
++      firmImage: toImage(page?.firmStrip?.image),
++    };
++  } catch (err) {
++    console.error("[home] Could not load Home Page content from Strapi:", err.message);
++    return { heroImage: null, firmImage: null };
++  }
++}
++
++/**
+  * Pulls the 3 latest articles from Strapi, normalized to one shape
+  * regardless of source. Falls back to the local `blog.js` data if Strapi
+  * isn't reachable at build/request time — the homepage should never look
+@@ -116,15 +136,15 @@
+   );
+ }
+ 
+-function FirmStrip() {
++function FirmStrip({ image }) {
+   return (
+     <section className="relative overflow-hidden bg-ink text-parchment">
+       <div className="mx-auto grid max-w-6xl items-center lg:grid-cols-2">
+         <div className="relative min-h-[22rem] lg:min-h-[36rem]">
+-          <PhotoPlaceholder
+-            label="Morning mist over the Kisii highlands"
+-            aspect="h-full"
+-            className="absolute inset-0 h-full w-full"
++          <CmsImage
++            image={image}
++            sizes="(min-width: 1024px) 576px, 100vw"
++            placeholderLabel="Morning mist over the Kisii highlands"
+           />
+         </div>
+         <div className="px-5 py-16 sm:px-12 sm:py-24">
+diff -ruN a/src/components/CmsImage.jsx b/src/components/CmsImage.jsx
+--- a/src/components/CmsImage.jsx	1970-01-01 00:00:00.000000000 +0000
++++ b/src/components/CmsImage.jsx	2026-10-18 11:52:34.178353137 +0000
+@@ -0,0 +1,46 @@
++import Image from "next/image";
++import PhotoPlaceholder from "@/components/PhotoPlaceholder";
++import { objectPositionFor } from "@/lib/cms-image";
++
++/**
++ * Renders an image managed in Strapi, or the old gradient placeholder when
++ * nothing has been uploaded (or Strapi is unreachable) — so a page never
++ * breaks just because a slot is empty.
++ *
++ * `image` is the object produced by toImage() in src/lib/strapi.js
++ * ({ src, alt, focus }) or null.
++ *
++ * Fills its nearest POSITIONED ancestor (relative / absolute), exactly like
++ * the placeholder it replaces — the parent decides the size and shape.
++ * Pass `priority` for the one image visible on first paint (the hero), and
++ * `sizes` so the browser downloads the right width (not the full original).
++ */
++export default function CmsImage({
++  image,
++  sizes = "100vw",
++  priority = false,
++  className = "",
++  placeholderLabel,
++}) {
++  if (!image?.src) {
++    return (
++      <PhotoPlaceholder
++        label={placeholderLabel}
++        aspect="h-full"
++        className="absolute inset-0 h-full w-full"
++      />
++    );
++  }
++
++  return (
++    <Image
++      src={image.src}
++      alt={image.alt}
++      fill
++      sizes={sizes}
++      priority={priority}
++      className={`object-cover ${className}`}
++      style={{ objectPosition: objectPositionFor(image.focus) }}
++    />
++  );
++}
+diff -ruN a/src/components/Hero.jsx b/src/components/Hero.jsx
+--- a/src/components/Hero.jsx	2026-10-18 11:52:34.166895646 +0000
++++ b/src/components/Hero.jsx	2026-10-18 11:52:34.167891209 +0000
+@@ -4,12 +4,12 @@
+ import Link from "next/link";
+ import { Phone, ArrowRight } from "lucide-react";
+ import { gsap } from "@/lib/gsap";
+-import PhotoPlaceholder from "@/components/PhotoPlaceholder";
++import CmsImage from "@/components/CmsImage";
+ import { firm } from "@/lib/data/firm";
+ 
+ const HEADLINE_WORDS = ["The", "record", "you", "can", "rely", "on."];
+ 
+-export default function Hero() {
++export default function Hero({ backgroundImage = null }) {
+   const sectionRef = useRef(null);
+   const bgRef = useRef(null);
+   const eyebrowRef = useRef(null);
+@@ -75,10 +75,11 @@
+   return (
+     <section ref={sectionRef} className="relative min-h-[100svh] overflow-hidden bg-ink text-parchment">
+       <div ref={bgRef} className="absolute inset-0 -top-[10%] h-[120%]">
+-        <PhotoPlaceholder
+-          label="Firm portrait — advocates in chambers"
+-          aspect="h-full"
+-          className="h-full w-full"
++        <CmsImage
++          image={backgroundImage}
++          priority
++          sizes="100vw"
++          placeholderLabel="Firm portrait — advocates in chambers"
+         />
+       </div>
+       <div className="absolute inset-0 bg-ink/70" />
+diff -ruN a/src/lib/cms-image.js b/src/lib/cms-image.js
+--- a/src/lib/cms-image.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/lib/cms-image.js	2026-10-18 11:52:34.175524477 +0000
+@@ -0,0 +1,41 @@
++/**
++ * Pure helpers (no imports) for turning a Strapi `shared.image` component
++ * into the plain props <CmsImage> needs. Kept dependency-free so the logic
++ * can be tested without Next or Strapi running.
++ *
++ * A `shared.image` component from Strapi looks like:
++ *   { alt: "...", focus: "top", file: { url: "/uploads/x.jpg", alternativeText: "..." } }
++ */
++
++/** `focus` choices in Strapi -> CSS object-position (which part of a cropped photo stays visible). */
++export const OBJECT_POSITION = {
++  center: "center",
++  top: "center top",
++  bottom: "center bottom",
++  left: "left center",
++  right: "right center",
++};
++
++const has = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
++
++export function objectPositionFor(focus) {
++  return has(OBJECT_POSITION, focus) ? OBJECT_POSITION[focus] : OBJECT_POSITION.center;
++}
++
++/**
++ * @param slot        the populated `shared.image` component (or null/undefined)
++ * @param resolveUrl  (mediaObject) => absolute URL | null   (see mediaUrl in strapi.js)
++ * @returns { src, alt, focus } or null when nothing has been uploaded
++ */
++export function buildImage(slot, resolveUrl) {
++  const file = slot?.file;
++  const src = file ? resolveUrl(file) : null;
++  if (!src) return null;
++  return {
++    src,
++    // Editor-written alt wins, then the Media Library's own alt text, else
++    // empty (correct for purely decorative images such as the hero background).
++    alt: slot.alt || file.alternativeText || "",
++    focus: has(OBJECT_POSITION, slot.focus) ? slot.focus : "center",
++  };
++}
+diff -ruN a/src/lib/strapi.js b/src/lib/strapi.js
+--- a/src/lib/strapi.js	2026-10-18 11:52:34.162105577 +0000
++++ b/src/lib/strapi.js	2026-10-18 11:52:34.163227120 +0000
+@@ -1,4 +1,5 @@
+ import axios from "axios";
++import { buildImage } from "@/lib/cms-image";
+ 
+ const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
+ 
+@@ -33,6 +34,34 @@
+   return media.url.startsWith("http") ? media.url : `${STRAPI_URL}${media.url}`;
+ }
+ 
++/** Turns a populated Strapi `shared.image` component into { src, alt, focus } for <CmsImage> (null if empty). */
++export function toImage(slot) {
++  return buildImage(slot, mediaUrl);
++}
++
++/**
++ * The "Home Page" single type: one component per homepage section, each
++ * holding that section's images. Returns null if it hasn't been created and
++ * PUBLISHED in Strapi yet (Strapi answers 404 until then); any other
++ * failure (CMS down, permissions) is thrown so the caller can log it.
++ *
++ * Nested component -> component -> media needs explicit dot-notation
++ * populate paths; populate=* only goes one level deep.
++ */
++export async function getHomePage() {
++  try {
++    const { data } = await strapiPublic.get("/home-page", {
++      params: {
++        populate: ["hero.backgroundImage.file", "firmStrip.image.file"],
++      },
++    });
++    return data.data;
++  } catch (err) {
++    if (err.response?.status === 404) return null;
++    throw err;
++  }
++}
++
+ /**
+  * Fetch all published articles, newest first, with author/category populated.
+  */
