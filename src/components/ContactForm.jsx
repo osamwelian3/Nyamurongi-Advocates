@@ -1,162 +1,117 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { gsap } from "@/lib/gsap";
+import { useEffect, useRef, useState } from "react";
 import { Send, CheckCircle2 } from "lucide-react";
+import { gsap } from "@/lib/gsap";
+import { siteConfig } from "@/lib/site-config";
+import { HONEYPOT_FIELD } from "@/lib/forms";
+import { TextField, TextAreaField, Honeypot } from "@/components/FormField";
 
-const FIELDS = [
-  { name: "name", label: "Your Name", type: "text" },
-  { name: "email", label: "Your Email", type: "email" },
-  { name: "subject", label: "Subject", type: "text" },
-];
-
-function Field({ field, value, onChange }) {
-  const labelRef = useRef(null);
-  const lineRef = useRef(null);
-
-  const focus = () => {
-    gsap.to(labelRef.current, {
-      y: -22,
-      scale: 0.85,
-      color: "#7a2436",
-      duration: 0.25,
-      ease: "power2.out",
-    });
-    gsap.to(lineRef.current, { scaleX: 1, duration: 0.35, ease: "power3.out" });
-  };
-
-  const blur = () => {
-    gsap.to(lineRef.current, { scaleX: 0, duration: 0.25, ease: "power2.in" });
-    if (!value) {
-      gsap.to(labelRef.current, {
-        y: 0,
-        scale: 1,
-        color: "#4a5568",
-        duration: 0.25,
-        ease: "power2.out",
-      });
-    }
-  };
-
-  return (
-    <div className="relative pt-5">
-      <label
-        ref={labelRef}
-        htmlFor={field.name}
-        className="pointer-events-none absolute left-0 top-5 origin-left font-sans text-sm text-slate"
-      >
-        {field.label}
-      </label>
-      <input
-        id={field.name}
-        name={field.name}
-        type={field.type}
-        value={value}
-        onChange={(e) => onChange(field.name, e.target.value)}
-        onFocus={focus}
-        onBlur={blur}
-        required
-        className="w-full border-0 border-b border-ink/20 bg-transparent py-2 font-sans text-ink outline-none"
-      />
-      <span
-        ref={lineRef}
-        className="absolute bottom-0 left-0 h-[2px] w-full origin-left scale-x-0 bg-maroon"
-      />
-    </div>
-  );
-}
+const EMPTY = { name: "", email: "", subject: "", message: "" };
 
 export default function ContactForm() {
-  const [values, setValues] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  });
+  const [values, setValues] = useState(EMPTY);
+  const [trap, setTrap] = useState("");
   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
-  const successRef = useRef(null);
+  const [error, setError] = useState("");
+  const doneRef = useRef(null);
 
-  const update = (name, val) => setValues((v) => ({ ...v, [name]: val }));
+  const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
 
-  const handleSubmit = async (e) => {
+  // Confirmation: animate in and move focus to it so screen-reader users hear it.
+  useEffect(() => {
+    if (status !== "sent" || !doneRef.current) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduce) {
+      gsap.fromTo(doneRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
+    }
+    doneRef.current.focus();
+  }, [status]);
+
+  async function onSubmit(e) {
     e.preventDefault();
+    if (status === "sending") return;
     setStatus("sending");
+    setError("");
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, [HONEYPOT_FIELD]: trap }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      setValues(EMPTY);
       setStatus("sent");
-      setValues({ name: "", email: "", subject: "", message: "" });
-      requestAnimationFrame(() => {
-        gsap.fromTo(
-          successRef.current,
-          { opacity: 0, y: 8 },
-          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
-        );
-      });
-    } catch {
+    } catch (err) {
+      // Never report success unless the server said so.
+      setError(
+        err instanceof TypeError
+          ? "We couldn't reach the server. Please check your connection and try again."
+          : err.message
+      );
       setStatus("error");
     }
-  };
+  }
 
   if (status === "sent") {
     return (
-      <div
-        ref={successRef}
-        className="flex items-start gap-3 rounded-sm border border-brass/30 bg-brass/10 p-6"
-      >
-        <CheckCircle2 className="mt-0.5 shrink-0 text-brass" size={22} />
-        <div>
-          <p className="font-serif text-lg text-ink">Message sent</p>
-          <p className="mt-1 text-sm text-slate">
-            Thank you for reaching out. A member of our team will respond
-            shortly.
-          </p>
-        </div>
+      <div ref={doneRef} tabIndex={-1} role="status" className="py-6 outline-none">
+        <CheckCircle2 size={34} strokeWidth={1.5} className="text-maroon" />
+        <h3 className="mt-5 font-display text-3xl sm:text-4xl">Thank you. Your message has been sent.</h3>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/75">
+          A member of the chambers will reply to the email address you gave. If it is urgent, please call{" "}
+          <a href={siteConfig.phone.href} className="underline underline-offset-4 hover:text-maroon">
+            {siteConfig.phone.value}
+          </a>
+          .
+        </p>
+        <button
+          type="button"
+          onClick={() => setStatus("idle")}
+          className="mt-6 text-sm text-ink/60 underline underline-offset-4 hover:text-maroon"
+        >
+          Send another message
+        </button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {FIELDS.map((field) => (
-        <Field
-          key={field.name}
-          field={field}
-          value={values[field.name]}
-          onChange={update}
-        />
-      ))}
-
-      <div className="relative pt-5">
-        <label className="mb-2 block font-sans text-sm text-slate">
-          Your Message
-        </label>
-        <textarea
-          rows={5}
-          value={values.message}
-          onChange={(e) => update("message", e.target.value)}
-          className="w-full resize-none border border-ink/20 bg-transparent p-3 font-sans text-ink outline-none transition-colors focus:border-maroon"
-        />
+    <form onSubmit={onSubmit} className="relative space-y-3" aria-busy={status === "sending"}>
+      <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        <TextField id="name" label="Your name" required autoComplete="name" maxLength={100} value={values.name} onChange={set("name")} />
+        <TextField id="email" label="Your email" type="email" required autoComplete="email" maxLength={254} value={values.email} onChange={set("email")} />
       </div>
+      <TextField id="subject" label="Subject" required maxLength={200} value={values.subject} onChange={set("subject")} />
+      <TextAreaField id="message" label="Your message" rows={6} maxLength={5000} value={values.message} onChange={set("message")} />
 
-      <button
-        type="submit"
-        disabled={status === "sending"}
-        className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 font-sans text-sm text-parchment transition-colors hover:bg-maroon disabled:opacity-60"
-      >
-        {status === "sending" ? "Sending..." : "Submit"}
-        <Send size={15} />
-      </button>
+      <Honeypot name={HONEYPOT_FIELD} value={trap} onChange={(e) => setTrap(e.target.value)} />
 
       {status === "error" && (
-        <p className="text-sm text-maroon">
-          Something went wrong — please try again, or call us directly.
+        <p role="alert" className="border border-maroon/30 bg-maroon/5 px-4 py-3 text-sm text-ink">
+          {error}{" "}
+          You can also call{" "}
+          <a href={siteConfig.phone.href} className="underline underline-offset-4">
+            {siteConfig.phone.value}
+          </a>
+          .
         </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-4 pt-3">
+        <button
+          type="submit"
+          disabled={status === "sending"}
+          className="inline-flex h-12 items-center gap-2 bg-ink px-7 font-sans text-sm font-medium tracking-wide text-parchment transition-colors hover:bg-maroon disabled:cursor-wait disabled:opacity-60"
+        >
+          {status === "sending" ? "Sending…" : "Send message"}
+          <Send size={15} />
+        </button>
+        <p className="text-xs text-ink/50">
+          Please don&rsquo;t send confidential case details by this form; we&rsquo;ll ask for papers once we&rsquo;ve spoken.
+        </p>
+      </div>
     </form>
   );
 }

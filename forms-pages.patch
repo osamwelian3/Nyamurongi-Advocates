@@ -1,0 +1,1593 @@
+diff -ruN a/src/app/api/contact/route.js b/src/app/api/contact/route.js
+--- a/src/app/api/contact/route.js	2026-10-30 08:41:52.300463897 +0000
++++ b/src/app/api/contact/route.js	2026-10-30 08:41:52.692283523 +0000
+@@ -1,34 +1,18 @@
+ import { NextResponse } from "next/server";
++import { processContact } from "@/lib/form-handlers";
++import { clientIp, readJsonBody } from "@/lib/forms";
++import { createEntry } from "@/lib/strapi-server";
+ 
+-export async function POST(request) {
+-  let body;
+-  try {
+-    body = await request.json();
+-  } catch {
+-    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+-  }
+-
+-  const { name, email, subject, message } = body || {};
+-
+-  if (!name?.trim() || !email?.trim() || !subject?.trim()) {
+-    return NextResponse.json(
+-      { error: "Name, email, and subject are required." },
+-      { status: 400 }
+-    );
+-  }
++export const dynamic = "force-dynamic";
+ 
+-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+-  if (!emailPattern.test(email)) {
+-    return NextResponse.json({ error: "Invalid email address." }, { status: 400 });
+-  }
+-
+-  // --- Plug in a real email/notification service here -----------------
+-  // e.g. Resend, Postmark, or SMTP via Nodemailer, sending to
+-  // info@nyamurongiadvocates.local. Keeping this as a clearly-marked stub
+-  // since it requires real credentials you'll want to set as env vars
+-  // (RESEND_API_KEY, etc.) rather than hardcode.
+-  console.log("New contact form submission:", { name, email, subject, message });
+-  // ----------------------------------------------------------------------
++export async function POST(request) {
++  const parsed = await readJsonBody(request);
++  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
+ 
+-  return NextResponse.json({ ok: true });
++  const result = await processContact({
++    body: parsed.body,
++    ip: clientIp(request.headers),
++    create: (data) => createEntry("contact-messages", data),
++  });
++  return NextResponse.json(result.body, { status: result.status, headers: result.headers });
+ }
+diff -ruN a/src/app/api/testimonials/route.js b/src/app/api/testimonials/route.js
+--- a/src/app/api/testimonials/route.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/app/api/testimonials/route.js	2026-10-30 08:41:52.747844224 +0000
+@@ -0,0 +1,20 @@
++import { NextResponse } from "next/server";
++import { processTestimonial } from "@/lib/form-handlers";
++import { clientIp, readJsonBody } from "@/lib/forms";
++import { createEntry } from "@/lib/strapi-server";
++
++export const dynamic = "force-dynamic";
++
++export async function POST(request) {
++  const parsed = await readJsonBody(request);
++  if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: parsed.status });
++
++  const result = await processTestimonial({
++    body: parsed.body,
++    ip: clientIp(request.headers),
++    // Arrives in Strapi as `pending`: the model's beforeCreate hook forces it,
++    // and nothing is shown publicly until an admin approves it.
++    create: (data) => createEntry("testimonials", data),
++  });
++  return NextResponse.json(result.body, { status: result.status, headers: result.headers });
++}
+diff -ruN a/src/app/contact/page.js b/src/app/contact/page.js
+--- a/src/app/contact/page.js	2026-10-30 08:41:52.314743615 +0000
++++ b/src/app/contact/page.js	2026-10-30 08:41:52.705322948 +0000
+@@ -1,113 +1,112 @@
+-import { Phone, Mail, MapPin } from "lucide-react";
+-import ContactForm from "@/components/ContactForm";
++import Link from "next/link";
++import { Phone, Mail, MapPin, Clock, ArrowUpRight } from "lucide-react";
++import PageHero from "@/components/PageHero";
+ import Reveal from "@/components/Reveal";
++import ContactForm from "@/components/ContactForm";
++import { firm } from "@/lib/data/firm";
++import { siteConfig } from "@/lib/site-config";
++
++export const metadata = {
++  title: `Contact | ${firm.name}`,
++  description: `Contact ${firm.name} in ${siteConfig.address.city}: telephone, email, office address and a message form.`,
++};
++
++function InfoCard({ icon: Icon, label, children, href, external }) {
++  const body = (
++    <>
++      <Icon size={20} strokeWidth={1.5} className="mt-0.5 shrink-0 text-maroon" />
++      <span className="min-w-0 flex-1">
++        <span className="block text-[0.68rem] uppercase tracking-[0.2em] text-ink/45">{label}</span>
++        <span className="mt-1 block text-base leading-snug">{children}</span>
++      </span>
++      {href && (
++        <ArrowUpRight
++          size={16}
++          strokeWidth={1.5}
++          className="mt-1 shrink-0 text-ink/35 transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-maroon"
++        />
++      )}
++    </>
++  );
++  const cls = "group flex items-start gap-4 border border-ink/10 bg-parchment p-5 transition-colors duration-150";
++  if (!href) return <div className={cls}>{body}</div>;
++  return (
++    <a
++      href={href}
++      className={`${cls} hover:bg-parchment-2`}
++      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
++    >
++      {body}
++    </a>
++  );
++}
+ 
+ export default function ContactPage() {
++  const { phone, email, address, hours } = siteConfig;
++  const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
++    `${address.line1}, ${address.line2}, ${address.city}, ${address.country}`
++  )}`;
++
+   return (
+-    <>
+-      {/* ============ PAGE HERO ============ */}
+-      <section className="bg-ink text-parchment">
+-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+-          <Reveal direction="up">
+-            <p className="font-sans text-sm tracking-[0.2em] text-brass">
+-              Contact Us
+-            </p>
++    <main className="bg-parchment text-ink">
++      <PageHero
++        tone="ink"
++        image
++        kicker="Contact"
++        title="Reach out for trusted legal support."
++        lede={`A professional law firm in ${address.city} offering reliable legal advice, representation and consultation: prompt, confidential and practical.`}
++      />
++
++      <section className="mx-auto grid max-w-6xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-12">
++        <div className="space-y-3 lg:col-span-5">
++          <Reveal>
++            <InfoCard icon={Phone} label={phone.label} href={phone.href}>
++              {phone.value}
++            </InfoCard>
+           </Reveal>
+-          <Reveal direction="up" delay={0.1}>
+-            <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight md:text-5xl">
+-              Reach Out for Trusted Legal Support & Guidance
+-            </h1>
++          <Reveal delay={0.06}>
++            <InfoCard icon={Mail} label="Email" href={`mailto:${email}`}>
++              <span className="break-all">{email}</span>
++            </InfoCard>
+           </Reveal>
+-          <Reveal direction="up" delay={0.2}>
+-            <p className="mt-6 max-w-2xl leading-relaxed text-parchment/70">
+-              Nyamurongi Advocates is a professional law firm in Kenya offering
+-              reliable legal advice, representation, and consultation services.
+-              We are committed to providing prompt, confidential, and practical
+-              legal support across a wide range of legal matters.
+-            </p>
++          <Reveal delay={0.12}>
++            <InfoCard icon={MapPin} label="Visit the chambers" href={directions} external>
++              {address.line1}
++              <br />
++              {address.line2}, {address.city}
++              <span className="mt-1 block text-xs text-ink/50">Open in Google Maps</span>
++            </InfoCard>
++          </Reveal>
++          <Reveal delay={0.18}>
++            <InfoCard icon={Clock} label="Hours">
++              {hours}
++            </InfoCard>
+           </Reveal>
+-        </div>
+-      </section>
+ 
+-      {/* ============ CONTACT INFO + FORM ============ */}
+-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+-        <div className="grid gap-12 md:grid-cols-[1fr_1.4fr]">
+-          {/* Contact details */}
+-          <Reveal direction="left">
+-            <div className="space-y-6">
+-              <a
+-                href="tel:+254711205997"
+-                className="group flex items-start gap-4 rounded-sm border border-ink/10 bg-white/60 p-6 transition-colors hover:border-maroon/40"
+-              >
+-                <Phone
+-                  size={22}
+-                  className="mt-0.5 shrink-0 text-brass"
+-                />
+-                <div>
+-                  <p className="font-sans text-sm font-medium text-ink">
+-                    Call Now
+-                  </p>
+-                  <p className="mt-1 text-sm text-slate">
+-                    +254 711 205 997
+-                  </p>
+-                </div>
+-              </a>
+-
+-              <a
+-                href="mailto:info@nyamurongiadvocates.local"
+-                className="group flex items-start gap-4 rounded-sm border border-ink/10 bg-white/60 p-6 transition-colors hover:border-maroon/40"
++          <Reveal delay={0.24} className="pt-4">
++            <p className="text-sm leading-relaxed text-ink/70">
++              A consultation is a conversation; a brief is a file. Not sure what to bring?{" "}
++              <Link
++                href="/blog/how-to-instruct-these-chambers"
++                className="underline underline-offset-4 hover:text-maroon"
+               >
+-                <Mail
+-                  size={22}
+-                  className="mt-0.5 shrink-0 text-brass"
+-                />
+-                <div>
+-                  <p className="font-sans text-sm font-medium text-ink">
+-                    Email Us
+-                  </p>
+-                  <p className="mt-1 text-sm text-slate">
+-                    info@nyamurongiadvocates.local
+-                  </p>
+-                </div>
+-              </a>
+-
+-              <div className="flex items-start gap-4 rounded-sm border border-ink/10 bg-white/60 p-6">
+-                <MapPin
+-                  size={22}
+-                  className="mt-0.5 shrink-0 text-brass"
+-                />
+-                <div>
+-                  <p className="font-sans text-sm font-medium text-ink">
+-                    Visit Office
+-                  </p>
+-                  <p className="mt-1 text-sm leading-relaxed text-slate">
+-                    Lengetia Place, 2nd Floor
+-                    <br />
+-                    Moi Highway
+-                    <br />
+-                    Kisii
+-                  </p>
+-                </div>
+-              </div>
+-            </div>
++                How to instruct these chambers
++              </Link>
++              .
++            </p>
+           </Reveal>
++        </div>
+ 
+-          {/* Contact form */}
+-          <Reveal direction="right" delay={0.1}>
+-            <div className="rounded-sm border border-ink/10 bg-white/60 p-8 md:p-10">
+-              <h2 className="font-serif text-2xl text-ink">Send Us a Message</h2>
+-              <p className="mt-2 text-sm text-slate">
+-                Reach out to our team today for expert guidance from
+-                experienced advocates dedicated to protecting your rights and
+-                interests.
+-              </p>
+-              <div className="mt-8">
+-                <ContactForm />
+-              </div>
++        <Reveal className="lg:col-span-7" delay={0.1}>
++          <div className="border border-ink/10 bg-parchment-2/40 p-6 sm:p-10">
++            <h2 className="font-display text-3xl sm:text-4xl">Send us a message</h2>
++            <p className="mt-2 text-sm text-ink/65">We&rsquo;ll reply to the email address you give us.</p>
++            <div className="mt-4">
++              <ContactForm />
+             </div>
+-          </Reveal>
+-        </div>
++          </div>
++        </Reveal>
+       </section>
+-    </>
++    </main>
+   );
+-}
+\ No newline at end of file
++}
+diff -ruN a/src/app/testimonials/page.js b/src/app/testimonials/page.js
+--- a/src/app/testimonials/page.js	2026-10-30 08:41:52.376232398 +0000
++++ b/src/app/testimonials/page.js	2026-10-30 08:41:52.711828926 +0000
+@@ -1,71 +1,84 @@
+ import Link from "next/link";
+-import { Star, ArrowRight } from "lucide-react";
+-import { testimonials } from "@/lib/data/testimonials";
++import { ArrowRight } from "lucide-react";
++import PageHero from "@/components/PageHero";
+ import Reveal from "@/components/Reveal";
++import TestimonialCard from "@/components/TestimonialCard";
++import { getApprovedTestimonials } from "@/lib/strapi";
++import { firm } from "@/lib/data/firm";
++
++export const metadata = {
++  title: `Testimonials | ${firm.name}`,
++  description: `What clients say about ${firm.name}.`,
++};
++
++// Re-read Strapi on every request so a newly approved testimonial appears
++// without a rebuild.
++export const dynamic = "force-dynamic";
++
++export default async function TestimonialsPage() {
++  let items = [];
++  let failed = false;
++  try {
++    const res = await getApprovedTestimonials();
++    items = res.data ?? [];
++  } catch (err) {
++    failed = true;
++    console.error("[testimonials] could not load approved testimonials:", err.message);
++  }
+ 
+-export default function TestimonialsPage() {
+   return (
+-    <>
+-      {/* ============ PAGE HERO ============ */}
+-      <section className="bg-ink text-parchment">
+-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+-          <Reveal direction="up">
+-            <p className="font-sans text-sm tracking-[0.2em] text-brass">
+-              Testimonials
+-            </p>
+-          </Reveal>
+-          <Reveal direction="up" delay={0.1}>
+-            <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight md:text-5xl">
+-              What Our Clients Say
+-            </h1>
++    <main className="bg-parchment text-ink">
++      <PageHero
++        tone="ink"
++        image
++        kicker="Client reviews"
++        title="What our clients say."
++        lede="Reliable, professional, results-driven legal services, described in our clients' own words."
++      />
++
++      <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
++        {failed && (
++          <Reveal className="max-w-xl">
++            <p className="font-display text-2xl">We couldn&rsquo;t load the testimonials just now.</p>
++            <p className="mt-2 text-sm text-ink/65">Please try again in a little while.</p>
+           </Reveal>
+-          <Reveal direction="up" delay={0.2}>
+-            <p className="mt-6 max-w-2xl leading-relaxed text-parchment/70">
+-              We take pride in delivering reliable, professional, and
+-              results-driven legal services. Hear directly from our clients as
+-              they share their experiences working with Nyamurongi Advocates.
++        )}
++
++        {/* No placeholder/dummy reviews, ever: an empty list is shown honestly. */}
++        {!failed && items.length === 0 && (
++          <Reveal className="max-w-xl">
++            <p className="font-display text-2xl">Client testimonials will appear here.</p>
++            <p className="mt-2 text-sm text-ink/65">
++              Have you worked with us? We&rsquo;d be glad to hear how it went.
+             </p>
+           </Reveal>
+-        </div>
++        )}
++
++        {items.length > 0 && (
++          <div className="columns-1 gap-6 md:columns-2 lg:columns-3">
++            {items.map((item, i) => (
++              <Reveal key={item.documentId} delay={Math.min(i * 0.05, 0.3)} className="mb-6 break-inside-avoid">
++                <TestimonialCard item={item} />
++              </Reveal>
++            ))}
++          </div>
++        )}
+       </section>
+ 
+-      {/* ============ TESTIMONIALS GRID ============ */}
+-      <section className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+-          {testimonials.map((t, i) => (
+-            <Reveal key={t.id} direction="up" delay={(i % 3) * 0.08}>
+-              <div className="flex h-full flex-col rounded-sm border border-ink/10 bg-white/60 p-7">
+-                <div className="flex gap-0.5 text-brass">
+-                  {Array.from({ length: 5 }).map((_, si) => (
+-                    <Star
+-                      key={si}
+-                      size={15}
+-                      fill={si < t.rating ? "currentColor" : "none"}
+-                      strokeWidth={1.5}
+-                    />
+-                  ))}
+-                </div>
+-                <p className="mt-5 flex-1 font-serif text-[15px] leading-relaxed text-ink">
+-                  &ldquo;{t.quote}&rdquo;
+-                </p>
+-                <p className="mt-5 text-sm text-slate">{t.name}</p>
+-              </div>
+-            </Reveal>
+-          ))}
+-        </div>
+-
+-        <Reveal direction="up" delay={0.1}>
+-          <div className="mt-12 text-center">
+-            <Link
+-              href="/testimonials/submit"
+-              className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 font-sans text-sm text-parchment transition-colors hover:bg-maroon"
+-            >
+-              Submit a Testimonial
+-              <ArrowRight size={15} />
+-            </Link>
++      <section className="bg-ink px-5 py-20 text-parchment sm:px-8">
++        <Reveal className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
++          <div>
++            <p className="text-[0.68rem] uppercase tracking-[0.28em] text-brass">Share your experience</p>
++            <h2 className="mt-3 max-w-xl font-display text-4xl sm:text-5xl">Worked with the chambers?</h2>
+           </div>
++          <Link
++            href="/testimonials/submit"
++            className="inline-flex h-12 items-center gap-2 bg-parchment px-6 font-sans text-sm font-medium tracking-wide text-ink transition-colors hover:bg-parchment-2"
++          >
++            Write a testimonial <ArrowRight size={16} />
++          </Link>
+         </Reveal>
+       </section>
+-    </>
++    </main>
+   );
+-}
+\ No newline at end of file
++}
+diff -ruN a/src/app/testimonials/submit/page.js b/src/app/testimonials/submit/page.js
+--- a/src/app/testimonials/submit/page.js	2026-10-30 08:41:52.384232398 +0000
++++ b/src/app/testimonials/submit/page.js	2026-10-30 08:41:52.718450404 +0000
+@@ -1,255 +1,31 @@
+-"use client";
+-
+-import { useRef, useState } from "react";
+-import { gsap } from "@/lib/gsap";
+-import { Star, Clock, CheckCircle2 } from "lucide-react";
++import PageHero from "@/components/PageHero";
+ import Reveal from "@/components/Reveal";
++import TestimonialForm from "@/components/TestimonialForm";
++import { firm } from "@/lib/data/firm";
+ 
+-export default function SubmitTestimonialPage() {
+-  const [form, setForm] = useState({
+-    fullName: "",
+-    email: "",
+-    companyName: "",
+-    companyWebsite: "",
+-    quote: "",
+-  });
+-  const [rating, setRating] = useState(0);
+-  const [hoverRating, setHoverRating] = useState(0);
+-  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+-  const successRef = useRef(null);
+-
+-  const update = (name, val) => setForm((f) => ({ ...f, [name]: val }));
+-
+-  const handleSubmit = async (e) => {
+-    e.preventDefault();
+-    if (!form.fullName.trim() || !form.email.trim() || !form.quote.trim()) {
+-      return;
+-    }
+-    setStatus("sending");
+-    try {
+-      const { submitTestimonial } = await import("@/lib/strapi");
+-      await submitTestimonial({
+-        fullName: form.fullName,
+-        email: form.email,
+-        companyName: form.companyName,
+-        companyWebsite: form.companyWebsite,
+-        quote: form.quote,
+-        rating: rating || undefined,
+-      });
+-      setStatus("sent");
+-      requestAnimationFrame(() => {
+-        gsap.fromTo(
+-          successRef.current,
+-          { opacity: 0, y: 8 },
+-          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+-        );
+-      });
+-    } catch (err) {
+-      console.warn("Testimonial submission (CMS unreachable):", err.message);
+-      setStatus("sent");
+-      requestAnimationFrame(() => {
+-        gsap.fromTo(
+-          successRef.current,
+-          { opacity: 0, y: 8 },
+-          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+-        );
+-      });
+-    }
+-  };
+-
+-  if (status === "sent") {
+-    return (
+-      <section className="mx-auto max-w-2xl px-6 py-24 md:py-32">
+-        <div
+-          ref={successRef}
+-          className="flex items-start gap-3 rounded-sm border border-brass/30 bg-brass/10 p-8"
+-        >
+-          <CheckCircle2 className="mt-0.5 shrink-0 text-brass" size={24} />
+-          <div>
+-            <p className="font-serif text-2xl text-ink">Testimonial submitted</p>
+-            <p className="mt-2 text-sm leading-relaxed text-slate">
+-              Thank you for sharing your experience. Your testimonial has been
+-              received and is awaiting moderator approval before it appears on
+-              our site.
+-            </p>
+-          </div>
+-        </div>
+-      </section>
+-    );
+-  }
++export const metadata = {
++  title: `Submit a testimonial | ${firm.name}`,
++  description: `Tell us about your experience with ${firm.name}.`,
++};
+ 
++export default function SubmitTestimonialPage() {
+   return (
+-    <>
+-      {/* ============ PAGE HERO ============ */}
+-      <section className="bg-ink text-parchment">
+-        <div className="mx-auto max-w-6xl px-6 py-20 md:py-28">
+-          <Reveal direction="up">
+-            <p className="font-sans text-sm tracking-[0.2em] text-brass">
+-              Submit a Testimonial
+-            </p>
+-          </Reveal>
+-          <Reveal direction="up" delay={0.1}>
+-            <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight md:text-5xl">
+-              Share Your Experience With Us
+-            </h1>
+-          </Reveal>
+-          <Reveal direction="up" delay={0.2}>
+-            <p className="mt-6 max-w-2xl leading-relaxed text-parchment/70">
+-              Have you worked with Nyamurongi Advocates? We&rsquo;d love to hear
+-              about your experience. Your testimonial will be reviewed before
+-              being published.
+-            </p>
+-          </Reveal>
+-        </div>
+-      </section>
+-
+-      {/* ============ FORM ============ */}
+-      <section className="mx-auto max-w-2xl px-6 py-20 md:py-28">
+-        <Reveal direction="up">
+-          <form
+-            onSubmit={handleSubmit}
+-            className="rounded-sm border border-ink/10 bg-white/60 p-8 md:p-10"
+-          >
+-            <div className="space-y-5">
+-              <div>
+-                <label
+-                  htmlFor="fullName"
+-                  className="mb-1.5 block font-sans text-sm text-slate"
+-                >
+-                  Full Name *
+-                </label>
+-                <input
+-                  id="fullName"
+-                  type="text"
+-                  value={form.fullName}
+-                  onChange={(e) => update("fullName", e.target.value)}
+-                  required
+-                  placeholder="What is your full name?"
+-                  className="w-full border border-ink/20 bg-transparent px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-maroon"
+-                />
+-              </div>
+-
+-              <div>
+-                <label
+-                  htmlFor="email"
+-                  className="mb-1.5 block font-sans text-sm text-slate"
+-                >
+-                  Email *
+-                </label>
+-                <input
+-                  id="email"
+-                  type="email"
+-                  value={form.email}
+-                  onChange={(e) => update("email", e.target.value)}
+-                  required
+-                  placeholder="What is your email address?"
+-                  className="w-full border border-ink/20 bg-transparent px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-maroon"
+-                />
+-              </div>
+-
+-              <div>
+-                <label
+-                  htmlFor="companyName"
+-                  className="mb-1.5 block font-sans text-sm text-slate"
+-                >
+-                  Company Name
+-                </label>
+-                <input
+-                  id="companyName"
+-                  type="text"
+-                  value={form.companyName}
+-                  onChange={(e) => update("companyName", e.target.value)}
+-                  placeholder="What is your company name?"
+-                  className="w-full border border-ink/20 bg-transparent px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-maroon"
+-                />
+-              </div>
+-
+-              <div>
+-                <label
+-                  htmlFor="companyWebsite"
+-                  className="mb-1.5 block font-sans text-sm text-slate"
+-                >
+-                  Company Website
+-                </label>
+-                <input
+-                  id="companyWebsite"
+-                  type="url"
+-                  value={form.companyWebsite}
+-                  onChange={(e) => update("companyWebsite", e.target.value)}
+-                  placeholder="Does your company have a website?"
+-                  className="w-full border border-ink/20 bg-transparent px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-maroon"
+-                />
+-              </div>
+-
+-              <div>
+-                <label
+-                  htmlFor="quote"
+-                  className="mb-1.5 block font-sans text-sm text-slate"
+-                >
+-                  Testimonial *
+-                </label>
+-                <textarea
+-                  id="quote"
+-                  rows={5}
+-                  value={form.quote}
+-                  onChange={(e) => update("quote", e.target.value)}
+-                  required
+-                  placeholder="What do you think about us?"
+-                  className="w-full resize-none border border-ink/20 bg-transparent px-3 py-2.5 text-sm text-ink outline-none transition-colors focus:border-maroon"
+-                />
+-              </div>
+-
+-              {/* Star rating */}
+-              <div>
+-                <p className="mb-1.5 font-sans text-sm text-slate">
+-                  Star Rating
+-                </p>
+-                <div className="flex gap-1">
+-                  {Array.from({ length: 5 }).map((_, i) => {
+-                    const starValue = i + 1;
+-                    const active = hoverRating
+-                      ? starValue <= hoverRating
+-                      : starValue <= rating;
+-                    return (
+-                      <button
+-                        key={i}
+-                        type="button"
+-                        onMouseEnter={() => setHoverRating(starValue)}
+-                        onMouseLeave={() => setHoverRating(0)}
+-                        onClick={() => setRating(starValue)}
+-                        aria-label={`Rate ${starValue} star${starValue > 1 ? "s" : ""}`}
+-                        className="p-0.5 transition-transform hover:scale-110"
+-                      >
+-                        <Star
+-                          size={26}
+-                          fill={active ? "currentColor" : "none"}
+-                          strokeWidth={1.5}
+-                          className={
+-                            active ? "text-brass" : "text-ink/30"
+-                          }
+-                        />
+-                      </button>
+-                    );
+-                  })}
+-                </div>
+-              </div>
+-
+-              <button
+-                type="submit"
+-                disabled={status === "sending"}
+-                className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 font-sans text-sm text-parchment transition-colors hover:bg-maroon disabled:opacity-60"
+-              >
+-                {status === "sending" ? "Submitting..." : "Add Testimonial"}
+-              </button>
+-
+-              <p className="flex items-center gap-2 text-xs text-slate/70">
+-                <Clock size={13} />
+-                Testimonials are reviewed before being published.
+-              </p>
+-            </div>
+-          </form>
++    <main className="bg-parchment text-ink">
++      <PageHero
++        tone="ink"
++        image
++        kicker="Share your experience"
++        title="Tell us how we did."
++        lede="Testimonials are read by the chambers and published once approved."
++      />
++
++      <section className="mx-auto max-w-3xl px-5 py-16 sm:px-8 sm:py-24">
++        <Reveal>
++          <div className="border border-ink/10 bg-parchment-2/40 p-6 sm:p-10">
++            <TestimonialForm />
++          </div>
+         </Reveal>
+       </section>
+-    </>
++    </main>
+   );
+-}
+\ No newline at end of file
++}
+diff -ruN a/src/components/ContactForm.jsx b/src/components/ContactForm.jsx
+--- a/src/components/ContactForm.jsx	2026-10-30 08:41:52.307709222 +0000
++++ b/src/components/ContactForm.jsx	2026-10-30 08:41:52.699185414 +0000
+@@ -1,162 +1,117 @@
+ "use client";
+ 
+-import { useRef, useState } from "react";
+-import { gsap } from "@/lib/gsap";
++import { useEffect, useRef, useState } from "react";
+ import { Send, CheckCircle2 } from "lucide-react";
++import { gsap } from "@/lib/gsap";
++import { siteConfig } from "@/lib/site-config";
++import { HONEYPOT_FIELD } from "@/lib/forms";
++import { TextField, TextAreaField, Honeypot } from "@/components/FormField";
+ 
+-const FIELDS = [
+-  { name: "name", label: "Your Name", type: "text" },
+-  { name: "email", label: "Your Email", type: "email" },
+-  { name: "subject", label: "Subject", type: "text" },
+-];
+-
+-function Field({ field, value, onChange }) {
+-  const labelRef = useRef(null);
+-  const lineRef = useRef(null);
+-
+-  const focus = () => {
+-    gsap.to(labelRef.current, {
+-      y: -22,
+-      scale: 0.85,
+-      color: "#7a2436",
+-      duration: 0.25,
+-      ease: "power2.out",
+-    });
+-    gsap.to(lineRef.current, { scaleX: 1, duration: 0.35, ease: "power3.out" });
+-  };
+-
+-  const blur = () => {
+-    gsap.to(lineRef.current, { scaleX: 0, duration: 0.25, ease: "power2.in" });
+-    if (!value) {
+-      gsap.to(labelRef.current, {
+-        y: 0,
+-        scale: 1,
+-        color: "#4a5568",
+-        duration: 0.25,
+-        ease: "power2.out",
+-      });
+-    }
+-  };
+-
+-  return (
+-    <div className="relative pt-5">
+-      <label
+-        ref={labelRef}
+-        htmlFor={field.name}
+-        className="pointer-events-none absolute left-0 top-5 origin-left font-sans text-sm text-slate"
+-      >
+-        {field.label}
+-      </label>
+-      <input
+-        id={field.name}
+-        name={field.name}
+-        type={field.type}
+-        value={value}
+-        onChange={(e) => onChange(field.name, e.target.value)}
+-        onFocus={focus}
+-        onBlur={blur}
+-        required
+-        className="w-full border-0 border-b border-ink/20 bg-transparent py-2 font-sans text-ink outline-none"
+-      />
+-      <span
+-        ref={lineRef}
+-        className="absolute bottom-0 left-0 h-[2px] w-full origin-left scale-x-0 bg-maroon"
+-      />
+-    </div>
+-  );
+-}
++const EMPTY = { name: "", email: "", subject: "", message: "" };
+ 
+ export default function ContactForm() {
+-  const [values, setValues] = useState({
+-    name: "",
+-    email: "",
+-    subject: "",
+-    message: "",
+-  });
++  const [values, setValues] = useState(EMPTY);
++  const [trap, setTrap] = useState("");
+   const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+-  const successRef = useRef(null);
++  const [error, setError] = useState("");
++  const doneRef = useRef(null);
+ 
+-  const update = (name, val) => setValues((v) => ({ ...v, [name]: val }));
++  const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
+ 
+-  const handleSubmit = async (e) => {
++  // Confirmation: animate in and move focus to it so screen-reader users hear it.
++  useEffect(() => {
++    if (status !== "sent" || !doneRef.current) return;
++    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
++    if (!reduce) {
++      gsap.fromTo(doneRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
++    }
++    doneRef.current.focus();
++  }, [status]);
++
++  async function onSubmit(e) {
+     e.preventDefault();
++    if (status === "sending") return;
+     setStatus("sending");
++    setError("");
+     try {
+       const res = await fetch("/api/contact", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+-        body: JSON.stringify(values),
++        body: JSON.stringify({ ...values, [HONEYPOT_FIELD]: trap }),
+       });
+-      if (!res.ok) throw new Error("Request failed");
++      const data = await res.json().catch(() => ({}));
++      if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
++      setValues(EMPTY);
+       setStatus("sent");
+-      setValues({ name: "", email: "", subject: "", message: "" });
+-      requestAnimationFrame(() => {
+-        gsap.fromTo(
+-          successRef.current,
+-          { opacity: 0, y: 8 },
+-          { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }
+-        );
+-      });
+-    } catch {
++    } catch (err) {
++      // Never report success unless the server said so.
++      setError(
++        err instanceof TypeError
++          ? "We couldn't reach the server. Please check your connection and try again."
++          : err.message
++      );
+       setStatus("error");
+     }
+-  };
++  }
+ 
+   if (status === "sent") {
+     return (
+-      <div
+-        ref={successRef}
+-        className="flex items-start gap-3 rounded-sm border border-brass/30 bg-brass/10 p-6"
+-      >
+-        <CheckCircle2 className="mt-0.5 shrink-0 text-brass" size={22} />
+-        <div>
+-          <p className="font-serif text-lg text-ink">Message sent</p>
+-          <p className="mt-1 text-sm text-slate">
+-            Thank you for reaching out. A member of our team will respond
+-            shortly.
+-          </p>
+-        </div>
++      <div ref={doneRef} tabIndex={-1} role="status" className="py-6 outline-none">
++        <CheckCircle2 size={34} strokeWidth={1.5} className="text-maroon" />
++        <h3 className="mt-5 font-display text-3xl sm:text-4xl">Thank you. Your message has been sent.</h3>
++        <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/75">
++          A member of the chambers will reply to the email address you gave. If it is urgent, please call{" "}
++          <a href={siteConfig.phone.href} className="underline underline-offset-4 hover:text-maroon">
++            {siteConfig.phone.value}
++          </a>
++          .
++        </p>
++        <button
++          type="button"
++          onClick={() => setStatus("idle")}
++          className="mt-6 text-sm text-ink/60 underline underline-offset-4 hover:text-maroon"
++        >
++          Send another message
++        </button>
+       </div>
+     );
+   }
+ 
+   return (
+-    <form onSubmit={handleSubmit} className="space-y-6">
+-      {FIELDS.map((field) => (
+-        <Field
+-          key={field.name}
+-          field={field}
+-          value={values[field.name]}
+-          onChange={update}
+-        />
+-      ))}
+-
+-      <div className="relative pt-5">
+-        <label className="mb-2 block font-sans text-sm text-slate">
+-          Your Message
+-        </label>
+-        <textarea
+-          rows={5}
+-          value={values.message}
+-          onChange={(e) => update("message", e.target.value)}
+-          className="w-full resize-none border border-ink/20 bg-transparent p-3 font-sans text-ink outline-none transition-colors focus:border-maroon"
+-        />
++    <form onSubmit={onSubmit} className="relative space-y-3" aria-busy={status === "sending"}>
++      <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
++        <TextField id="name" label="Your name" required autoComplete="name" maxLength={100} value={values.name} onChange={set("name")} />
++        <TextField id="email" label="Your email" type="email" required autoComplete="email" maxLength={254} value={values.email} onChange={set("email")} />
+       </div>
++      <TextField id="subject" label="Subject" required maxLength={200} value={values.subject} onChange={set("subject")} />
++      <TextAreaField id="message" label="Your message" rows={6} maxLength={5000} value={values.message} onChange={set("message")} />
+ 
+-      <button
+-        type="submit"
+-        disabled={status === "sending"}
+-        className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 font-sans text-sm text-parchment transition-colors hover:bg-maroon disabled:opacity-60"
+-      >
+-        {status === "sending" ? "Sending..." : "Submit"}
+-        <Send size={15} />
+-      </button>
++      <Honeypot name={HONEYPOT_FIELD} value={trap} onChange={(e) => setTrap(e.target.value)} />
+ 
+       {status === "error" && (
+-        <p className="text-sm text-maroon">
+-          Something went wrong — please try again, or call us directly.
++        <p role="alert" className="border border-maroon/30 bg-maroon/5 px-4 py-3 text-sm text-ink">
++          {error}{" "}
++          You can also call{" "}
++          <a href={siteConfig.phone.href} className="underline underline-offset-4">
++            {siteConfig.phone.value}
++          </a>
++          .
+         </p>
+       )}
++
++      <div className="flex flex-wrap items-center gap-4 pt-3">
++        <button
++          type="submit"
++          disabled={status === "sending"}
++          className="inline-flex h-12 items-center gap-2 bg-ink px-7 font-sans text-sm font-medium tracking-wide text-parchment transition-colors hover:bg-maroon disabled:cursor-wait disabled:opacity-60"
++        >
++          {status === "sending" ? "Sending…" : "Send message"}
++          <Send size={15} />
++        </button>
++        <p className="text-xs text-ink/50">
++          Please don&rsquo;t send confidential case details by this form; we&rsquo;ll ask for papers once we&rsquo;ve spoken.
++        </p>
++      </div>
+     </form>
+   );
+ }
+diff -ruN a/src/components/FormField.jsx b/src/components/FormField.jsx
+--- a/src/components/FormField.jsx	1970-01-01 00:00:00.000000000 +0000
++++ b/src/components/FormField.jsx	2026-10-30 08:41:52.752232394 +0000
+@@ -0,0 +1,66 @@
++/**
++ * Floating-label inputs, in pure CSS (Tailwind `peer` + `:placeholder-shown`).
++ * The old contact form animated colours with GSAP using hard-coded hex
++ * values, which ignored the theme switcher; this version reads the theme
++ * tokens (text-ink / text-maroon), so it follows whichever palette is active.
++ *
++ * The input must stay BEFORE the label and underline in the markup: `peer`
++ * only styles later siblings.
++ */
++const labelCls =
++  "pointer-events-none absolute left-0 top-7 origin-left text-sm text-ink/55 transition-all duration-200 " +
++  "peer-focus:-translate-y-6 peer-focus:scale-[0.85] peer-focus:text-maroon " +
++  "peer-[:not(:placeholder-shown)]:-translate-y-6 peer-[:not(:placeholder-shown)]:scale-[0.85]";
++
++const lineCls =
++  "pointer-events-none absolute bottom-0 left-0 h-[2px] w-full origin-left scale-x-0 bg-maroon " +
++  "transition-transform duration-300 peer-focus:scale-x-100";
++
++const inputCls =
++  "peer w-full border-0 border-b border-ink/25 bg-transparent pb-2 pt-1 text-base text-ink outline-none";
++
++export function TextField({ id, name = id, label, required, type = "text", ...rest }) {
++  return (
++    <div className="relative pt-6">
++      <input id={id} name={name} type={type} placeholder=" " required={required} className={inputCls} {...rest} />
++      <label htmlFor={id} className={labelCls}>
++        {label}
++        {required && <span aria-hidden="true"> *</span>}
++      </label>
++      <span className={lineCls} />
++    </div>
++  );
++}
++
++export function TextAreaField({ id, name = id, label, required, rows = 5, ...rest }) {
++  return (
++    <div className="relative pt-6">
++      <textarea
++        id={id}
++        name={name}
++        rows={rows}
++        placeholder=" "
++        required={required}
++        className={`${inputCls} resize-none`}
++        {...rest}
++      />
++      <label htmlFor={id} className={labelCls}>
++        {label}
++        {required && <span aria-hidden="true"> *</span>}
++      </label>
++      <span className={lineCls} />
++    </div>
++  );
++}
++
++/** Off-screen decoy field. Humans never see or reach it; form-filling bots do fill it. */
++export function Honeypot({ name, value, onChange }) {
++  return (
++    <div aria-hidden="true" className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
++      <label>
++        Leave this field empty
++        <input type="text" name={name} tabIndex={-1} autoComplete="off" value={value} onChange={onChange} />
++      </label>
++    </div>
++  );
++}
+diff -ruN a/src/components/StarRating.jsx b/src/components/StarRating.jsx
+--- a/src/components/StarRating.jsx	1970-01-01 00:00:00.000000000 +0000
++++ b/src/components/StarRating.jsx	2026-10-30 08:41:52.759300549 +0000
+@@ -0,0 +1,55 @@
++"use client";
++
++import { useEffect, useRef } from "react";
++import { Star } from "lucide-react";
++import { gsap } from "@/lib/gsap";
++
++/**
++ * Read-only star rating. Stars pop in one after another when the card
++ * scrolls into view, and again every time it re-enters (down, back up, down
++ * again) — same repeat-on-every-pass behaviour as the rest of the site.
++ */
++export default function StarRating({ rating, size = 16 }) {
++  const rootRef = useRef(null);
++  const value = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
++
++  useEffect(() => {
++    const root = rootRef.current;
++    if (!root || value === 0) return;
++    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
++
++    const ctx = gsap.context(() => {
++      gsap.fromTo(
++        root.querySelectorAll("[data-star]"),
++        { scale: 0.3, opacity: 0 },
++        {
++          scale: 1,
++          opacity: 1,
++          duration: 0.45,
++          stagger: 0.08,
++          ease: "back.out(2.2)",
++          transformOrigin: "50% 50%",
++          scrollTrigger: { trigger: root, start: "top 92%", toggleActions: "play reverse play reverse" },
++        }
++      );
++    }, root);
++    return () => ctx.revert();
++  }, [value]);
++
++  if (value === 0) return null;
++
++  return (
++    <div ref={rootRef} role="img" aria-label={`Rated ${value} out of 5`} className="flex gap-0.5 text-maroon">
++      {[1, 2, 3, 4, 5].map((n) => (
++        <Star
++          key={n}
++          data-star
++          size={size}
++          strokeWidth={1.5}
++          className={n <= value ? "fill-current" : "text-ink/25"}
++          aria-hidden="true"
++        />
++      ))}
++    </div>
++  );
++}
+diff -ruN a/src/components/TestimonialCard.jsx b/src/components/TestimonialCard.jsx
+--- a/src/components/TestimonialCard.jsx	1970-01-01 00:00:00.000000000 +0000
++++ b/src/components/TestimonialCard.jsx	2026-10-30 08:41:52.764232394 +0000
+@@ -0,0 +1,43 @@
++import Image from "next/image";
++import StarRating from "@/components/StarRating";
++import { mediaUrl } from "@/lib/strapi";
++
++function initials(name = "") {
++  const parts = name.trim().split(/\s+/).filter(Boolean);
++  if (parts.length === 0) return "?";
++  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
++}
++
++/**
++ * One approved testimonial. Shows the Media Library photo if an admin added
++ * one in Strapi, otherwise an initials tile. The submitter's email is never
++ * part of this data (private field), and their website is not linked.
++ */
++export default function TestimonialCard({ item }) {
++  const photo = mediaUrl(item.photo);
++
++  return (
++    <figure className="group border border-ink/10 bg-parchment p-7 transition-colors duration-150 hover:bg-parchment-2 sm:p-8">
++      <StarRating rating={item.rating} />
++      <blockquote className="mt-5 font-display text-2xl leading-snug">
++        &ldquo;{item.quote}&rdquo;
++      </blockquote>
++      <figcaption className="mt-6 flex items-center gap-3">
++        {photo ? (
++          <Image src={photo} alt="" width={44} height={44} className="h-11 w-11 object-cover" />
++        ) : (
++          <span
++            aria-hidden="true"
++            className="flex h-11 w-11 shrink-0 items-center justify-center bg-ink font-display text-lg text-parchment"
++          >
++            {initials(item.fullName)}
++          </span>
++        )}
++        <span className="min-w-0">
++          <span className="block text-sm font-medium">{item.fullName}</span>
++          {item.companyName && <span className="block truncate text-xs text-ink/55">{item.companyName}</span>}
++        </span>
++      </figcaption>
++    </figure>
++  );
++}
+diff -ruN a/src/components/TestimonialForm.jsx b/src/components/TestimonialForm.jsx
+--- a/src/components/TestimonialForm.jsx	1970-01-01 00:00:00.000000000 +0000
++++ b/src/components/TestimonialForm.jsx	2026-10-30 08:41:52.771551807 +0000
+@@ -0,0 +1,173 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++import { Star, CheckCircle2, Send } from "lucide-react";
++import { gsap } from "@/lib/gsap";
++import { siteConfig } from "@/lib/site-config";
++import { HONEYPOT_FIELD } from "@/lib/forms";
++import { TextField, TextAreaField, Honeypot } from "@/components/FormField";
++
++const EMPTY = { fullName: "", email: "", companyName: "", companyWebsite: "", quote: "" };
++const QUOTE_MAX = 1000;
++
++/** Accessible 1-5 picker: a radio group with arrow-key support and a hover preview. */
++function StarPicker({ value, onChange, invalid }) {
++  const [hover, setHover] = useState(0);
++  const shown = hover || value;
++
++  const onKey = (e) => {
++    if (e.key === "ArrowRight" || e.key === "ArrowUp") {
++      e.preventDefault();
++      onChange(Math.min(5, (value || 0) + 1));
++    } else if (e.key === "ArrowLeft" || e.key === "ArrowDown") {
++      e.preventDefault();
++      onChange(Math.max(1, (value || 2) - 1));
++    }
++  };
++
++  return (
++    <div role="radiogroup" aria-label="Star rating" aria-required="true" onMouseLeave={() => setHover(0)}
++      className={`-ml-1 flex gap-0.5 ${invalid ? "outline outline-1 outline-offset-4 outline-maroon" : ""}`}>
++      {[1, 2, 3, 4, 5].map((n) => (
++        <button
++          key={n}
++          type="button"
++          role="radio"
++          aria-checked={value === n}
++          aria-label={`${n} star${n > 1 ? "s" : ""}`}
++          tabIndex={value === n || (!value && n === 1) ? 0 : -1}
++          onClick={() => onChange(n)}
++          onKeyDown={onKey}
++          onMouseEnter={() => setHover(n)}
++          className="p-1 transition-transform duration-150 hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-maroon"
++        >
++          <Star size={30} strokeWidth={1.5} className={n <= shown ? "fill-maroon text-maroon" : "text-ink/30"} />
++        </button>
++      ))}
++    </div>
++  );
++}
++
++export default function TestimonialForm() {
++  const [values, setValues] = useState(EMPTY);
++  const [rating, setRating] = useState(0);
++  const [trap, setTrap] = useState("");
++  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
++  const [error, setError] = useState("");
++  const doneRef = useRef(null);
++
++  const set = (key) => (e) => setValues((v) => ({ ...v, [key]: e.target.value }));
++
++  useEffect(() => {
++    if (status !== "sent" || !doneRef.current) return;
++    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
++      gsap.fromTo(doneRef.current, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
++    }
++    doneRef.current.focus();
++  }, [status]);
++
++  async function onSubmit(e) {
++    e.preventDefault();
++    if (status === "sending") return;
++    if (!rating) {
++      setError("Please choose a star rating.");
++      setStatus("error");
++      return;
++    }
++    setStatus("sending");
++    setError("");
++    try {
++      const res = await fetch("/api/testimonials", {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ ...values, rating, [HONEYPOT_FIELD]: trap }),
++      });
++      const data = await res.json().catch(() => ({}));
++      if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
++      setValues(EMPTY);
++      setRating(0);
++      setStatus("sent");
++    } catch (err) {
++      // The old form showed "submitted" even when this failed. Now it only
++      // says so when the server confirmed it.
++      setError(
++        err instanceof TypeError
++          ? "We couldn't reach the server. Please check your connection and try again."
++          : err.message
++      );
++      setStatus("error");
++    }
++  }
++
++  if (status === "sent") {
++    return (
++      <div ref={doneRef} tabIndex={-1} role="status" className="py-6 outline-none">
++        <CheckCircle2 size={34} strokeWidth={1.5} className="text-maroon" />
++        <h3 className="mt-5 font-display text-3xl sm:text-4xl">Thank you for your testimonial.</h3>
++        <p className="mt-3 max-w-md text-sm leading-relaxed text-ink/75">
++          We&rsquo;ve received it. It will be read by the chambers and published once approved. Your email address is never shown.
++        </p>
++        <button type="button" onClick={() => setStatus("idle")} className="mt-6 text-sm text-ink/60 underline underline-offset-4 hover:text-maroon">
++          Submit another
++        </button>
++      </div>
++    );
++  }
++
++  return (
++    <form onSubmit={onSubmit} className="relative space-y-3" aria-busy={status === "sending"}>
++      <div className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
++        <TextField id="fullName" label="Full name" required autoComplete="name" maxLength={100} value={values.fullName} onChange={set("fullName")} />
++        <TextField id="email" label="Email (never shown)" type="email" required autoComplete="email" maxLength={254} value={values.email} onChange={set("email")} />
++        <TextField id="companyName" label="Company (optional)" autoComplete="organization" maxLength={100} value={values.companyName} onChange={set("companyName")} />
++        <TextField id="companyWebsite" label="Website (optional)" inputMode="url" maxLength={200} value={values.companyWebsite} onChange={set("companyWebsite")} />
++      </div>
++
++      <div>
++        <TextAreaField id="quote" label="Your testimonial" required rows={5} maxLength={QUOTE_MAX} value={values.quote} onChange={set("quote")} />
++        <p className="mt-1 text-right text-xs text-ink/45" aria-live="off">
++          {values.quote.length}/{QUOTE_MAX}
++        </p>
++      </div>
++
++      <div className="pt-2">
++        <p className="mb-1 text-sm text-ink/70">
++          Your rating <span aria-hidden="true">*</span>
++        </p>
++        <StarPicker value={rating} onChange={setRating} invalid={status === "error" && !rating} />
++      </div>
++
++      <Honeypot name={HONEYPOT_FIELD} value={trap} onChange={(e) => setTrap(e.target.value)} />
++
++      {status === "error" && (
++        <p role="alert" className="border border-maroon/30 bg-maroon/5 px-4 py-3 text-sm text-ink">
++          {error}
++          {rating > 0 && (
++            <>
++              {" "}You can also contact us on{" "}
++              <a href={siteConfig.phone.href} className="underline underline-offset-4">
++                {siteConfig.phone.value}
++              </a>
++              .
++            </>
++          )}
++        </p>
++      )}
++
++      <div className="space-y-4 pt-3">
++        <button
++          type="submit"
++          disabled={status === "sending"}
++          className="inline-flex h-12 items-center gap-2 bg-ink px-7 font-sans text-sm font-medium tracking-wide text-parchment transition-colors hover:bg-maroon disabled:cursor-wait disabled:opacity-60"
++        >
++          {status === "sending" ? "Sending…" : "Submit testimonial"}
++          <Send size={15} />
++        </button>
++        <p className="max-w-lg text-xs leading-relaxed text-ink/50">
++          Please don&rsquo;t include details of your case. By submitting, you agree that your name, company and
++          testimonial may be published on this website after review.
++        </p>
++      </div>
++    </form>
++  );
++}
+diff -ruN a/src/lib/form-handlers.js b/src/lib/form-handlers.js
+--- a/src/lib/form-handlers.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/lib/form-handlers.js	2026-10-30 08:41:52.736535136 +0000
+@@ -0,0 +1,48 @@
++import { validateContact, validateTestimonial, checkRateLimit } from "@/lib/forms";
++
++/**
++ * The decision logic behind /api/contact and /api/testimonials, kept free of
++ * Next so it can be tested directly. The route files are thin adapters.
++ *
++ * Each function returns { status, body, headers? } and NEVER throws.
++ * Order matters: rate-limit first (every attempt counts, including invalid
++ * and bot ones), then validate, then drop bots silently, then save.
++ */
++
++const TOO_MANY = "Too many attempts. Please wait a few minutes and try again.";
++const SAVE_FAILED =
++  "We couldn't send this just now. Please try again shortly, or contact us by phone.";
++
++async function run({ kind, body, ip, validate, save, limit, rate, log }) {
++  // Without a usable IP everyone shares one bucket, so give it more room
++  // rather than risk locking real clients out.
++  const unknownIp = ip === "unknown";
++  const rl = checkRateLimit(`${kind}:${ip}`, { limit: unknownIp ? limit * 6 : limit, ...rate });
++  if (!rl.ok) {
++    return { status: 429, body: { error: TOO_MANY }, headers: { "Retry-After": String(rl.retryAfter) } };
++  }
++
++  const v = validate(body);
++  if (v.honeypot) {
++    // Look like success so the bot moves on; store nothing.
++    return { status: 200, body: { ok: true } };
++  }
++  if (!v.ok) return { status: 400, body: { error: v.error, fields: v.fields } };
++
++  try {
++    await save(v.data);
++  } catch (err) {
++    // Detail goes to the server log only; visitors get a plain message.
++    log(`[${kind}] could not save to Strapi: ${err?.message ?? err}`);
++    return { status: 502, body: { error: SAVE_FAILED } };
++  }
++  return { status: 200, body: { ok: true } };
++}
++
++export function processContact({ body, ip, create, rate, log = console.error }) {
++  return run({ kind: "contact", body, ip, validate: validateContact, save: create, limit: 5, rate, log });
++}
++
++export function processTestimonial({ body, ip, create, rate, log = console.error }) {
++  return run({ kind: "testimonial", body, ip, validate: validateTestimonial, save: create, limit: 3, rate, log });
++}
+diff -ruN a/src/lib/forms.js b/src/lib/forms.js
+--- a/src/lib/forms.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/lib/forms.js	2026-10-30 08:41:52.730973624 +0000
+@@ -0,0 +1,165 @@
++/**
++ * Validation, abuse protection and request reading for the public forms
++ * (contact + testimonial). Pure JavaScript with no imports, so all of it is
++ * unit-tested without Next or Strapi running.
++ *
++ * Why this lives on OUR server and not in the browser: the browser never
++ * talks to Strapi for these forms. Our route handlers validate, filter spam,
++ * and only then create the entry in Strapi with a server-side token. That
++ * means the checks below cannot be bypassed by posting straight to Strapi.
++ */
++
++/** Honeypot: hidden from humans, irresistible to form-filling bots. */
++export const HONEYPOT_FIELD = "contact_extra";
++
++const EMAIL = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]+$/;
++// Single-line fields must never contain line breaks (header injection when
++// a field later lands in an email subject / reply-to).
++const LINE_BREAK = /[\r\n\u2028\u2029]/;
++// control characters except \t \n \r
++const CONTROL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
++
++const str = (v) => (typeof v === "string" ? v : "");
++
++function line(v, { min = 0, max, label, required }) {
++  const s = str(v).replace(CONTROL, "").trim();
++  if (!s) return required ? { error: `Please enter ${label}.` } : { value: "" };
++  if (LINE_BREAK.test(s)) return { error: `${cap(label)} must be on a single line.` };
++  if (s.length < min) return { error: `${cap(label)} is too short.` };
++  if (s.length > max) return { error: `${cap(label)} is too long (maximum ${max} characters).` };
++  return { value: s };
++}
++
++function block(v, { min = 0, max, label, required }) {
++  const s = str(v).replace(CONTROL, "").replace(/\r\n?/g, "\n").trim();
++  if (!s) return required ? { error: `Please enter ${label}.` } : { value: "" };
++  if (s.length < min) return { error: `${cap(label)} is too short (at least ${min} characters).` };
++  if (s.length > max) return { error: `${cap(label)} is too long (maximum ${max} characters).` };
++  return { value: s };
++}
++
++const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
++
++function email(v) {
++  const r = line(v, { max: 254, label: "your email address", required: true });
++  if (r.error) return r;
++  return EMAIL.test(r.value) ? r : { error: "Please enter a valid email address." };
++}
++
++/** Optional website: add https:// if missing, accept only real http(s) hosts. */
++function website(v) {
++  const r = line(v, { max: 200, label: "a website address", required: false });
++  if (r.error || !r.value) return r;
++  const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(r.value) ? r.value : `https://${r.value}`;
++  let u;
++  try {
++    u = new URL(candidate);
++  } catch {
++    return { error: "Please enter a valid website address, or leave it blank." };
++  }
++  const okProtocol = u.protocol === "http:" || u.protocol === "https:";
++  if (!okProtocol || !u.hostname.includes(".") || u.username || u.password) {
++    return { error: "Please enter a valid website address, or leave it blank." };
++  }
++  return { value: u.toString() };
++}
++
++function collect(parts, honeypotValue) {
++  if (str(honeypotValue).trim() !== "") return { ok: false, honeypot: true };
++  const fields = {};
++  const data = {};
++  for (const [key, r] of Object.entries(parts)) {
++    if (r.error) fields[key] = r.error;
++    else if (r.value !== "" && r.value !== undefined) data[key] = r.value;
++  }
++  const first = Object.values(fields)[0];
++  return first ? { ok: false, error: first, fields } : { ok: true, data };
++}
++
++/** Contact form: name, email, subject required; message optional (as on the original site). */
++export function validateContact(body) {
++  const b = body && typeof body === "object" ? body : {};
++  return collect(
++    {
++      name: line(b.name, { min: 2, max: 100, label: "your name", required: true }),
++      email: email(b.email),
++      subject: line(b.subject, { min: 3, max: 200, label: "a subject", required: true }),
++      message: block(b.message, { max: 5000, label: "your message", required: false }),
++    },
++    b[HONEYPOT_FIELD]
++  );
++}
++
++/** Testimonial form. Limits mirror the Strapi schema (quote max 1000, rating 1-5). */
++export function validateTestimonial(body) {
++  const b = body && typeof body === "object" ? body : {};
++  const n = typeof b.rating === "string" && b.rating.trim() !== "" ? Number(b.rating) : b.rating;
++  const rating =
++    Number.isInteger(n) && n >= 1 && n <= 5
++      ? { value: n }
++      : { error: "Please choose a star rating from 1 to 5." };
++  return collect(
++    {
++      fullName: line(b.fullName, { min: 2, max: 100, label: "your full name", required: true }),
++      email: email(b.email),
++      companyName: line(b.companyName, { max: 100, label: "a company name", required: false }),
++      companyWebsite: website(b.companyWebsite),
++      quote: block(b.quote, { min: 10, max: 1000, label: "your testimonial", required: true }),
++      rating,
++    },
++    b[HONEYPOT_FIELD]
++  );
++}
++
++/* ----------------------------- rate limiting ----------------------------- */
++
++const defaultStore = new Map();
++
++/**
++ * Sliding-window limiter, in memory. Fine for a single Node process (the
++ * VPS runs one); it resets on restart, which is acceptable for spam control.
++ * Pass your own `store`/`now` in tests.
++ */
++export function checkRateLimit(
++  key,
++  { limit = 5, windowMs = 10 * 60 * 1000, now = Date.now(), store = defaultStore } = {}
++) {
++  const recent = (store.get(key) ?? []).filter((t) => now - t < windowMs);
++  if (recent.length >= limit) {
++    store.set(key, recent);
++    return { ok: false, retryAfter: Math.max(1, Math.ceil((recent[0] + windowMs - now) / 1000)) };
++  }
++  recent.push(now);
++  store.set(key, recent);
++  if (store.size > 2000) {
++    for (const [k, times] of store) {
++      if (!times.some((t) => now - t < windowMs)) store.delete(k);
++    }
++  }
++  return { ok: true };
++}
++
++/** Best-effort client IP behind a reverse proxy. "unknown" if no usable header. */
++export function clientIp(headers) {
++  const raw = headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || headers?.get?.("x-real-ip")?.trim() || "";
++  return /^[0-9a-fA-F:.]{3,45}$/.test(raw) ? raw : "unknown";
++}
++
++/**
++ * Read a JSON body with a hard size cap (so a huge POST can't be used to
++ * burn memory). `request` only needs a .text() method.
++ */
++export async function readJsonBody(request, maxChars = 20000) {
++  let raw;
++  try {
++    raw = await request.text();
++  } catch {
++    return { ok: false, status: 400, error: "Invalid request." };
++  }
++  if (raw.length > maxChars) return { ok: false, status: 413, error: "That message is too long." };
++  try {
++    return { ok: true, body: JSON.parse(raw) };
++  } catch {
++    return { ok: false, status: 400, error: "Invalid request." };
++  }
++}
+diff -ruN a/src/lib/strapi-server.js b/src/lib/strapi-server.js
+--- a/src/lib/strapi-server.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/lib/strapi-server.js	2026-10-30 08:41:52.742106978 +0000
+@@ -0,0 +1,31 @@
++import axios from "axios";
++import { normalizeBaseUrl } from "@/lib/url";
++
++/**
++ * SERVER-ONLY. Creates entries in Strapi using STRAPI_FORMS_TOKEN, which is
++ * deliberately NOT a NEXT_PUBLIC_ variable: it is never sent to a browser.
++ * Only the route handlers under src/app/api import this file.
++ *
++ * The token should be a *Custom* Strapi API token that can only `create`
++ * Contact Message and Testimonial entries — nothing else (see
++ * FORMS-SETUP.md). Even if it leaked, it could not read or change content.
++ */
++export async function createEntry(pluralName, data) {
++  const token = process.env.STRAPI_FORMS_TOKEN;
++  if (!token) throw new Error("STRAPI_FORMS_TOKEN is not set on the server");
++
++  const client = axios.create({
++    baseURL: `${normalizeBaseUrl(process.env.NEXT_PUBLIC_STRAPI_URL)}/api`,
++    headers: { Authorization: `Bearer ${token}` },
++    timeout: 10000,
++  });
++
++  try {
++    const res = await client.post(`/${pluralName}`, { data });
++    return res.data;
++  } catch (err) {
++    const detail = err.response?.data?.error?.message;
++    const status = err.response?.status;
++    throw new Error(`${status ?? err.code ?? "network error"}${detail ? `: ${detail}` : ""}`);
++  }
++}
+diff -ruN a/src/lib/url.js b/src/lib/url.js
+--- a/src/lib/url.js	1970-01-01 00:00:00.000000000 +0000
++++ b/src/lib/url.js	2026-10-30 08:41:52.724825697 +0000
+@@ -0,0 +1,11 @@
++/**
++ * Base URL of the Strapi server, tolerant of the typo that has already cost
++ * time once: NEXT_PUBLIC_STRAPI_URL set without "http://". A scheme-less
++ * value is not a valid absolute URL for Node's HTTP client.
++ */
++export function normalizeBaseUrl(raw, fallback = "http://localhost:1337") {
++  let u = String(raw ?? "").trim().replace(/\/+$/, "");
++  if (!u) return fallback;
++  if (!/^https?:\/\//i.test(u)) u = `http://${u}`;
++  return u;
++}
